@@ -57,9 +57,9 @@ test("directory search uses official live records and keyboard selection", async
   page,
 }) => {
   await page.goto("/");
-  const search = page.getByRole("combobox");
+  const search = page.getByRole("combobox", { name: "Search a Massachusetts city, town, or neighborhood" });
   await search.fill("Cambridge");
-  await expect(page.getByRole("option").first()).toContainText("Cambridge");
+  await expect(page.getByRole("listbox").getByRole("option").first()).toContainText("Cambridge");
   await search.press("ArrowDown");
   await search.press("Enter");
   await expect(page.getByRole("heading", { name: "Cambridge." })).toBeVisible();
@@ -73,3 +73,5 @@ test("directory search uses official live records and keyboard selection", async
     }),
   ).toBeVisible();
 });
+
+

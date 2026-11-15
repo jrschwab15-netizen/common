@@ -118,6 +118,21 @@ export default function ApprovedHome() {
           .report-example-caption p { margin:0; font-size:12px; color:#c4d2e5; }
           .report-example-credit { margin:8px 0 0; font-size:10px; line-height:1.6; color:#b9cce2; }
           .report-example-credit a { color:inherit; text-decoration:underline; }
+          .walkthrough-map .report-example-photo { object-fit:contain; background:#edf3ff; }
+          .walkthrough-detail { font-size:12px; line-height:1.5; color:#52647c; min-height:36px; margin:8px 0; }
+          .walkthrough-location-label,.walkthrough-photo-state { font-size:11px; border:1px solid #dfe4ed; border-radius:5px; padding:8px; margin:8px 0 12px; color:#52647c; }
+          .walkthrough-note-canvas { background:#edf3ff; padding:20px; }
+          .walkthrough-note-preview { height:100%; color:#172235; }
+          .walkthrough-note-label { display:block; font-size:12px; font-weight:700; margin-bottom:18px; color:#205bd6; }
+          .walkthrough-note-context { display:flex; align-items:center; gap:12px; margin-bottom:15px; }
+          .walkthrough-note-context img { width:60px; height:60px; object-fit:cover; border-radius:7px; }
+          .walkthrough-note-context strong { display:block; font-size:13px; }
+          .walkthrough-note-context span { display:block; margin-top:4px; font-size:11px; color:#657185; }
+          .walkthrough-note-preview label { display:block; font-size:12px; font-weight:600; margin:12px 0; }
+          .walkthrough-note-preview select,.walkthrough-note-preview textarea { display:block; width:100%; margin-top:6px; padding:10px; border:1px solid #c8d5e8; border-radius:6px; background:#fff; color:#172235; font:12px/1.5 Arial,sans-serif; }
+          .walkthrough-note-preview textarea { height:115px; resize:vertical; }
+          .walkthrough-note-preview small,.walkthrough-note-input > span { color:#657185; font-size:10px; font-weight:400; }
+          .report-walkthrough .report-example-ui { min-height:216px; }
           .shared-place-scope { background:#edf3ff; padding:80px 0; }
           .shared-place-scope h2 { font-size:clamp(34px,4vw,56px); max-width:750px; margin:18px 0; }
           .place-scope-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; margin:32px 0; }
@@ -190,6 +205,12 @@ export default function ApprovedHome() {
             if (selected) selected.textContent = `Selected: ${button.textContent}`;
             const start = card?.querySelector<HTMLElement>("[data-report]");
             if (start) start.dataset.reportCategory = button.dataset.previewCategory;
+          });
+        });
+        content.querySelectorAll<HTMLSelectElement>(".walkthrough-category select").forEach(select => {
+          select.addEventListener("change", () => {
+            const start = select.closest(".report-photo-example")?.querySelector<HTMLElement>("[data-report]");
+            if (start) start.dataset.reportCategory = select.value;
           });
         });
 
