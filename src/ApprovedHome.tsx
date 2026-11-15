@@ -1,0 +1,334 @@
+/**
+ * Approved Common homepage. Visual markup and styling are loaded directly from
+ * the user-approved Common v7 prototype, not reinterpreted from a prose brief.
+ * All prototype scripts are discarded. Live actions use the existing router,
+ * Supabase-backed location RPC, and secure Quick Report route.
+ */
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "./lib";
+
+type PlaceResult = {
+  id: number | string;
+  name: string;
+  slug: string;
+  county?: string | null;
+  matched_alias?: string | null;
+};
+
+type Example = {
+  id: number;
+  name: string;
+  location: string;
+  age: number;
+  category: string;
+  count: number;
+  status: string;
+  scene: string;
+};
+
+const examples: Omit<Example, "scene">[] = [
+  { id: 1, name: "Overflowing public trash bin", location: "Example · Public sidewalk", age: 18, category: "trash", count: 7, status: "Still open" },
+  { id: 2, name: "Pothole in travel lane", location: "Example · Public road", age: 11, category: "road", count: 4, status: "Still open" },
+  { id: 3, name: "Graffiti on public wall", location: "Example · Public park", age: 6, category: "graffiti", count: 3, status: "Still open" },
+  { id: 4, name: "Trash cleared from public path", location: "Example · Public trail", age: 4, category: "fixed", count: 2, status: "Verified fixed" },
+];
+
+function fromPrototypeScripts(doc: Document, name: string): string {
+  // These SVG literals belong to the approved, static prototype. Never parse
+  // or run arbitrary fetched JavaScript and never use dynamic community content.
+  const scripts = Array.from(doc.querySelectorAll("script"));
+  const code = scripts.map((s) => s.textContent || "").join("\n");
+  const match = code.match(new RegExp(`const ${name}=\\x60([\\s\\S]*?)\\x60;`));
+  return match?.[1]?.startsWith("<svg ") ? match[1] : "";
+}
+
+export default function ApprovedHome() {
+  const host = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    const holder = host.current;
+    if (!holder) return;
+    const root = holder.shadowRoot || holder.attachShadow({ mode: "open" });
+    let cancelled = false;
+    let searchTimer: ReturnType<typeof setTimeout> | undefined;
+    let authSubscription: { unsubscribe: () => void } | undefined;
+
+    const render = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.BASE_URL}approved-home.html`, { cache: "no-cache" });
+        if (!response.ok) throw new Error("The approved homepage asset could not be loaded.");
+        const approved = await response.text();
+        if (cancelled) return;
+        const doc = new DOMParser().parseFromString(approved, "text/html");
+        const style = Array.from(doc.querySelectorAll("style"))
+          .map((node) => node.textContent || "")
+          .join("\n");
+        const scenes = {
+          trash: fromPrototypeScripts(doc, "trash"),
+          road: fromPrototypeScripts(doc, "pothole"),
+          graffiti: fromPrototypeScripts(doc, "graffiti"),
+          fixed: fromPrototypeScripts(doc, "clean"),
+        };
+        // Remove browser-demo authentication, simulated votes, modal scripts,
+        // inline handlers and any external script before inserting markup.
+        doc.querySelectorAll("script, .overlay").forEach((node) => node.remove());
+        doc.querySelectorAll("*").forEach((node) => {
+          for (const attribute of Array.from(node.attributes)) {
+            if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name);
+          }
+        });
+        const body = doc.body.innerHTML;
+        root.innerHTML = "";
+        const css = document.createElement("style");
+        css.textContent = `
+           :host { display:block; background:#f9fafc; color:#172235;
+            font: 15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+            --blue:#205bd6; --navy:#172235; --muted:#657185;
+            --line:#dfe4ed; --paper:#f9fafc; --mist:#edf3ff;
+            --orange:#e87951; --white:#fff; }
+          ${style}
+          .example-disclaimer { font-size:12px; color:#657185; padding:4px 0 19px; }
+          .issue { cursor:default; }
+          .issue:hover { transform:none; box-shadow:none; }
+          .place-matches[role="status"]:empty { display:none; }
+        `;
+        const content = document.createElement("div");
+        content.className = "common-approved-page";
+        content.innerHTML = body;
+        root.append(css, content);
+        const footerCopy = content.querySelector(".footer-row > div:last-child");
+        if (footerCopy) footerCopy.textContent = "Prelaunch beta · Coverage varies by community";
+
+        const report = () => navigate("/report");
+        const scrollTo = (id: string) => {
+          if (id === "home") window.scrollTo({ top: 0, behavior: "smooth" });
+          else root.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+        content.addEventListener("click", (event) => {
+          const el = event.target as HTMLElement;
+          const action = el.closest<HTMLElement>("[data-report], a, #myReportsNav");
+          if (!action) return;
+          if (action.matches("[data-report]")) {
+            event.preventDefault();
+            report();
+            return;
+          }
+          if (action.id === "myReportsNav") {
+            event.preventDefault();
+            navigate("/my-reports");
+            return;
+          }
+          if (action instanceof HTMLAnchorElement) {
+            const href = action.getAttribute("href") || "";
+            if (href.startsWith("#")) {
+              event.preventDefault();
+              if (href === "#issues" && action.closest(".overlay-card")) {
+                // The floating hero card is a fictional example, not a live issue.
+                scrollTo("issues");
+              } else scrollTo(href.slice(1));
+            }
+          }
+        });
+
+        // Restore live Supabase municipality/alias search in the approved card.
+        const search = root.querySelector<HTMLInputElement>("#placeSearch");
+        const matches = root.querySelector<HTMLElement>("#placeMatches");
+        const selected = root.querySelector<HTMLElement>("#placeSelected");
+        if (search && matches && selected) {
+          search.setAttribute("aria-label", "Search a Massachusetts city, town, or neighborhood");
+          search.setAttribute("autocomplete", "off");
+          search.setAttribute("role", "combobox");
+          search.setAttribute("aria-autocomplete", "list");
+          search.setAttribute("aria-controls", "placeMatches");
+          search.setAttribute("aria-expanded", "false");
+          matches.setAttribute("role", "listbox");
+          let active = -1;
+          let requestSerial = 0;
+          const performSearch = async () => {
+            const q = search.value.trim();
+            const thisRequest = ++requestSerial;
+            matches.replaceChildren();
+            active = -1;
+            search.removeAttribute("aria-activedescendant");
+            search.setAttribute("aria-expanded", "false");
+            selected.hidden = true;
+            if (q.length < 2) return;
+            const loading = document.createElement("div");
+            loading.className = "demo";
+            loading.textContent = "Searching Massachusetts…";
+            matches.append(loading);
+            const { data, error } = await supabase.rpc("search_places", { q });
+            if (cancelled || thisRequest !== requestSerial) return;
+            matches.replaceChildren();
+            if (error) {
+              const msg = document.createElement("div");
+              msg.className = "info";
+              msg.textContent = "Search is temporarily unavailable. Please try again.";
+              matches.append(msg);
+              return;
+            }
+            const result = (data || []) as PlaceResult[];
+            if (!result.length) {
+              const msg = document.createElement("div");
+              msg.className = "info";
+              msg.textContent = "No matching Massachusetts community. Other states are not yet covered.";
+              matches.append(msg);
+              return;
+            }
+            search.setAttribute("aria-expanded", "true");
+            result.slice(0, 7).forEach((place, index) => {
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = "place-match";
+              button.id = `approved-place-${index}`;
+              button.setAttribute("role", "option");
+              button.setAttribute("aria-selected", "false");
+              const name = document.createElement("span");
+              name.textContent = `${place.name}, MA`;
+              const detail = document.createElement("small");
+              detail.textContent = place.matched_alias
+                ? `${place.matched_alias} · ${place.county || "Massachusetts"}`
+                : `${place.county || "Massachusetts"} County`;
+              button.append(name, detail);
+              button.addEventListener("click", () => navigate(
+                `/places/${place.slug}${place.matched_alias ? `?neighborhood=${encodeURIComponent(place.matched_alias)}` : ""}`,
+              ));
+              matches.append(button);
+            });
+          };
+          search.addEventListener("input", () => {
+            ++requestSerial;
+            matches.replaceChildren();
+            search.setAttribute("aria-expanded", "false");
+            search.removeAttribute("aria-activedescendant");
+            active = -1;
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(performSearch, 220);
+          });
+          search.addEventListener("keydown", (event) => {
+            const options = Array.from(matches.querySelectorAll<HTMLButtonElement>("button.place-match"));
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+              event.preventDefault();
+              active = event.key === "ArrowDown" ? Math.min(active + 1, options.length - 1) : Math.max(active - 1, 0);
+              options.forEach((option, index) => option.setAttribute("aria-selected", String(index === active)));
+              if (options[active]) search.setAttribute("aria-activedescendant", options[active].id);
+            }
+            if (event.key === "Escape") {
+              ++requestSerial;
+              matches.replaceChildren();
+              search.setAttribute("aria-expanded", "false");
+              search.removeAttribute("aria-activedescendant");
+            }
+            if (event.key === "Enter") {
+              const first = options[active] || options[0];
+              if (first) { event.preventDefault(); first.click(); }
+              else if (search.value.trim()) {
+                event.preventDefault();
+                navigate(`/search?q=${encodeURIComponent(search.value.trim())}`);
+              }
+            }
+          });
+          // The v7 HTML labels this a demo search; update to truthful live copy.
+          const hint = search.closest(".common-search-card")?.querySelector("small:last-child");
+          if (hint) hint.textContent = "Search all 351 Massachusetts municipalities and supported community aliases.";
+        }
+
+        // Render the same approved illustrative SVG cards, but make the example
+        // status unmistakable and never pretend these are live issue records.
+        const cards = root.querySelector<HTMLElement>("#cards");
+        const filterButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-filter]"));
+        let activeFilter = "all";
+        const displayCards = () => {
+          if (!cards) return;
+          cards.replaceChildren();
+          const filtered = examples.filter((item) => activeFilter === "all" || item.category === activeFilter);
+          filtered.forEach((item) => {
+            const article = document.createElement("article");
+            article.className = "issue";
+            const scene = document.createElement("div");
+            scene.className = "scene";
+            // Scene SVG comes only from our versioned, approved static HTML.
+            scene.innerHTML = scenes[item.category as keyof typeof scenes] || "";
+            const label = document.createElement("div");
+            label.className = "scene-label";
+            label.textContent = `${item.status.toUpperCase()} · EXAMPLE`;
+            scene.append(label);
+            const body = document.createElement("div");
+            body.className = "issue-body";
+            const meta = document.createElement("div");
+            meta.className = "issue-meta";
+            meta.textContent = `${item.location} · ${item.count} example reports`;
+            const title = document.createElement("h3");
+            title.textContent = item.name;
+            const footer = document.createElement("div");
+            footer.className = "issue-footer";
+            const age = document.createElement("div");
+            const ageValue = document.createElement("b");
+            ageValue.textContent = `${item.age} days`;
+            const descriptor = document.createElement("span");
+            descriptor.textContent = item.category === "fixed" ? " to verify" : " since first report";
+            age.append(ageValue, descriptor);
+            footer.append(age);
+            body.append(meta, title, footer);
+            article.append(scene, body);
+            cards.append(article);
+          });
+          if (!filtered.length) {
+            const empty = document.createElement("p");
+            empty.textContent = "No examples in this category.";
+            cards.append(empty);
+          }
+        };
+        if (cards) {
+          const disclosure = document.createElement("div");
+          disclosure.className = "example-disclaimer";
+          disclosure.textContent = "Illustrative example reports only. They are not live municipal records.";
+          cards.parentNode?.insertBefore(disclosure, cards);
+          displayCards();
+        }
+        filterButtons.forEach((button) => button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter || "all";
+          filterButtons.forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+          displayCards();
+        }));
+        root.getElementById("showAll")?.addEventListener("click", () => {
+          const all = filterButtons.find((button) => button.dataset.filter === "all");
+          all?.click();
+          scrollTo("issues");
+        });
+        const myReports = root.getElementById("myReportsNav");
+        const updateReports = (loggedIn: boolean) => {
+          if (myReports) myReports.hidden = !loggedIn;
+        };
+        void supabase.auth.getUser().then(({ data }) => {
+          if (!cancelled) updateReports(Boolean(data.user));
+        });
+        const { data: auth } = supabase.auth.onAuthStateChange((_event, session) => {
+          updateReports(Boolean(session?.user));
+        });
+        authSubscription = auth.subscription;
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load the approved design.");
+      }
+    };
+    void render();
+    return () => {
+      cancelled = true;
+      if (searchTimer) clearTimeout(searchTimer);
+      authSubscription?.unsubscribe();
+      root.replaceChildren();
+    };
+  }, [navigate]);
+
+  return loadError ? (
+    <section role="alert" style={{ padding: "80px 6%" }}>
+      <h1>Common could not load.</h1>
+      <p>{loadError}</p>
+    </section>
+  ) : (
+    <div ref={host} className="approved-home-host" />
+  );
+}

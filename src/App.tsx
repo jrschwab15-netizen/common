@@ -1,3 +1,4 @@
+import ApprovedHome from "./ApprovedHome";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -142,108 +143,7 @@ function Search({ initial = "" }: { initial?: string }) {
   );
 }
 function Home() {
-  return (
-    <>
-      <section className="hero">
-        <div className="eyebrow">
-          <span /> PUBLIC SPACES. PUBLIC RECORD.
-        </div>
-        <h1>
-          A better street
-          <br />
-          starts with someone
-          <br />
-          <em>noticing.</em>
-        </h1>
-        <div className="hero-bottom">
-          <p>
-            See trash, potholes or damaged public spaces?
-            <br className="desktop" /> Take a photo, make it visible, and follow
-            <br className="desktop" /> what happens next.
-          </p>
-          <div>
-            <Link className="button" to="/report">
-              Quick Report <span>↗</span>
-            </Link>
-            <small>For shared public spaces. Always free to report.</small>
-          </div>
-        </div>
-        <Search />
-      </section>
-      <section className="story">
-        <div className="eyebrow">SMALL ACTS. SHARED PLACES.</div>
-        <h2>
-          Good neighbors.
-          <br />
-          <span>Better streets.</span>
-        </h2>
-        <p>
-          The cracked sidewalk on your walk. The overflowing bin in the park.
-          Common gives everyday observations a place in the public record—and a
-          history you can follow.
-        </p>
-        <div className="steps">
-          {[
-            [
-              "01",
-              "Spot it",
-              "Notice a problem with a shared public space. Stay safe; never approach a hazard.",
-            ],
-            [
-              "02",
-              "Report it",
-              "Confirm the location, add a photo and leave an optional note. An account is optional.",
-            ],
-            [
-              "03",
-              "Follow the fix",
-              "Track review, agency updates and independently verified evidence as separate steps.",
-            ],
-          ].map(([n, t, d]) => (
-            <article key={n}>
-              <span>{n} /</span>
-              <h3>{t}</h3>
-              <p>{d}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-      <section className="public-record">
-        <div>
-          <div className="eyebrow">BUILT ON EVIDENCE</div>
-          <h2>
-            A record.
-            <br />
-            Not a rating.
-          </h2>
-        </div>
-        <div>
-          <p>
-            Every eligible report begins with a real observation. Photos and
-            public responsibility are reviewed before anything is published.
-          </p>
-          <p>
-            A report count isn’t a cleanliness score. Agency closure isn’t proof
-            of a fix. We show what is known, and make the gaps clear.
-          </p>
-          <Link className="textlink" to="/methodology">
-            How Common works ↗
-          </Link>
-        </div>
-      </section>
-      <section className="empty-section">
-        <div className="eyebrow">THE PUBLIC RECORD</div>
-        <h2>Real places. Room to grow.</h2>
-        <p>
-          Find your Massachusetts community to see published reports and its
-          current coverage. Unreviewed submissions stay private.
-        </p>
-        <Link className="textlink" to="/search">
-          Find a community →
-        </Link>
-      </section>
-    </>
-  );
+  return <ApprovedHome />;
 }
 function SearchPage() {
   const [params] = useSearchParams();
@@ -1619,9 +1519,10 @@ export default function App() {
       <a className="skip" href="#main">
         Skip to content
       </a>
+      {route.pathname !== "/" && (
       <header>
         <Link className="wordmark" to="/" aria-label="Common home">
-          common
+          <img src={`${import.meta.env.BASE_URL}brand/common-mark.png`} alt="" />common.
         </Link>
         <nav aria-label="Main navigation">
           <Link className="nav-method" to="/methodology">
@@ -1643,6 +1544,7 @@ export default function App() {
           </Link>
         </nav>
       </header>
+      )}
       <main id="main">
         <ErrorNotice error={authError} />
         {authReady ? (
@@ -1694,10 +1596,11 @@ export default function App() {
           </section>
         )}
       </main>
+      {route.pathname !== "/" && (
       <footer>
         <div className="footer-top">
           <Link className="wordmark" to="/">
-            common
+            <img src={`${import.meta.env.BASE_URL}brand/common-mark.png`} alt="" />common.
           </Link>
           <p>
             Public spaces.
@@ -1725,7 +1628,8 @@ export default function App() {
           jurisdiction.
         </small>
       </footer>
-      {!route.pathname.startsWith("/report") && (
+      )}
+      {route.pathname !== "/" && !route.pathname.startsWith("/report") && (
         <Link className="mobile-report button" to="/report">
           Quick Report ↗
         </Link>

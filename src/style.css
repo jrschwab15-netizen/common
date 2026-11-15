@@ -1014,3 +1014,9 @@ footer > small {
     scroll-padding-bottom: 90px;
   }
 }
+
+/* Approved Common Concept A brand and isolated v7 homepage. */
+.wordmark { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.wordmark img { width: auto; height: 47px; max-width: 43px; display: block; object-fit: contain; flex-shrink: 0; }
+@media (max-width: 600px) { .wordmark img { height: 36px; max-width: 34px; } }
+.approved-home-host { display: block; min-height: 70vh; }
