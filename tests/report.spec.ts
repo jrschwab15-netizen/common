@@ -20,6 +20,7 @@ test("home stays public, guest reporting works, and emergency stops photos", asy
   );
   await expect(page.locator("input[type=file]")).toHaveCount(0);
   await page.getByRole("button", { name: "No immediate emergency" }).click();
+  await page.getByText("Manual location & place details", {exact:true}).click();
   await page
     .getByRole("textbox", { name: "Latitude", exact: true })
     .fill("42.36");

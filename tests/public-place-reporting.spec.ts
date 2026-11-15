@@ -10,6 +10,8 @@ test('photo examples teach category selection and start a public park report',as
  await boston.getByRole('button',{name:'Report something like this'}).click();
  await expect(page).toHaveURL(/category=Stinging/);
  await page.getByRole('button',{name:'Continue as guest'}).click();
+ await page.getByRole('button',{name:'No immediate emergency'}).click();
+ await page.getByText('Manual location & place details',{exact:true}).click();
  await expect(page.getByRole('combobox',{name:'Public place type',exact:true})).toHaveValue('Park / trail / playground');
  await expect(page.getByRole('combobox',{name:'Public place type',exact:true}).getByRole('option',{name:'Airport / public terminal'})).toHaveCount(1);
  await expect(page.getByRole('combobox',{name:'Public place type',exact:true}).getByRole('option',{name:'Train / subway / bus station'})).toHaveCount(1);

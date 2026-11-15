@@ -25,6 +25,6 @@ export default function GoogleReportMap({point,onChange}:{point:[number,number];
   <div ref={root} className="google-report-map" role="region" aria-label="Google Maps issue location" hidden={status==='error'} />
   {status==='loading'&&<p role="status">Loading Google Maps…</p>}
   {status==='error'&&<p className="notice" role="status">The map is unavailable right now. You can still use your device location or enter coordinates below.</p>}
-  <p className="report-map-help">Drag the pin or tap the map to mark the issue. Your location is a starting point; confirm where the problem actually is.</p>
+  <p className="report-map-help">Drag the pin or tap the map to mark the issue. Confirm the location below.</p>
  </div>;
 }

@@ -1060,3 +1060,49 @@ footer > small {
 .common-city-pin .pin-status { position:absolute; right:-2px; bottom:7px; width:10px; height:10px; border:1px solid #fff; border-radius:50%; background:#c35426; }
 .common-city-pin.is-fixed .pin-status { background:#287961; }
 .common-city-pin .pin-count { position:absolute; right:-8px; top:-6px; min-width:20px; height:20px; padding:2px; background:#205bd6; border-radius:10px; color:#fff; text-align:center; font:bold 12px Arial,sans-serif; }
+/* Compact, focused Quick Report steps. */
+.report-shell > header { padding:10px 20px; min-height:56px; }
+.report-shell > header .wordmark { font-size:28px; letter-spacing:-2px; }
+.report-shell > header .wordmark img { height:34px; max-width:30px; }
+.report-shell > header nav { display:none; }
+.report-flow.page.narrow { max-width:760px; padding:16px 22px 20px; min-height:0; }
+.report-flow .eyebrow { font-size:10px; }
+.report-flow .progress { margin:10px 0 14px; gap:12px; font-size:11px; }
+.report-flow .progress span { padding-bottom:8px; }
+.report-flow h1 { font-size:clamp(26px,4vw,36px); line-height:1.12; margin:10px 0; letter-spacing:-1px; }
+.report-flow > p { font-size:13px; line-height:1.5; margin:8px 0; }
+.report-flow label { margin-bottom:10px; font-size:12px; }
+.report-flow input,.report-flow select,.report-flow textarea { margin-top:5px; padding:9px 10px; min-height:42px; font-size:16px; }
+.report-flow .notice { padding:12px 14px; margin:10px 0; font-size:13px; }
+.report-flow .notice p { font-size:12px; }
+.report-flow .button,.report-flow .secondary { min-height:42px; padding:10px 14px; font-size:13px; }
+.report-flow .report-scope-intro { font-size:12px; }
+.report-safety-summary { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 10px; background:#edf5f1; color:#24624c; border-radius:6px; font-size:12px; }
+.report-flow .device-location-card { padding:0; margin:8px 0; background:none; border:0; }
+.report-flow .device-location-card .button { width:auto; }
+.report-flow .device-location-card p { margin:5px 0 0; font-size:11px; line-height:1.4; }
+.report-flow .report-map-card { margin:8px 0; border-radius:9px; }
+.report-flow .report-map-heading { display:none; }
+.report-flow .google-report-map { height:210px; }
+.report-flow .report-map-help { margin:5px 0; padding:0 9px; font-size:11px; line-height:1.35; }
+.report-location-options { margin:6px 0 10px; border-bottom:1px solid #dce4ef; }
+.report-location-options summary { padding:7px 0; cursor:pointer; font-size:12px; font-weight:600; }
+.report-location-options > .muted { font-size:11px; line-height:1.4; }
+.report-flow .check { font-size:12px; line-height:1.4; margin:8px 0; }
+.report-flow .check input { min-height:20px; width:20px; height:20px; margin:0; }
+.report-flow .report-next { margin:8px 0 0; position:static; z-index:5; box-shadow:none; }
+.report-flow .back { font-size:12px; padding:5px 0; margin:10px 14px 0 0; }
+.report-flow .report-draft-note { font-size:11px; margin:5px 0; }
+.report-flow .report-draft-note .inline-button { font-size:11px; min-height:26px; }
+.report-flow .photo-preview { max-height:200px; width:auto; max-width:100%; object-fit:contain; margin:10px auto; display:block; }
+.report-flow .photo-actions { margin:12px 0; }
+.report-flow textarea { min-height:85px; }
+.report-flow.report-entry { padding-top:28px; }
+.report-flow.report-entry .report-next { position:static; box-shadow:none; }
+@media(max-width:600px) {
+ .report-flow.page.narrow { padding:12px 16px 16px; }
+ .report-flow .google-report-map { height:clamp(150px,23dvh,205px); }
+ .report-flow .actions { gap:8px; }
+ .report-flow .report-next { bottom:6px; }
+}
+@media(max-width:360px) { .report-flow .google-report-map { height:145px; } .report-flow .report-map-help { font-size:10px; } .report-flow .progress { margin-bottom:10px; } .report-flow .report-map-card { margin:6px 0; } }

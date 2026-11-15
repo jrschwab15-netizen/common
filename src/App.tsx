@@ -591,10 +591,10 @@ function ReportPage({ session }: { session: Session | null }) {
     }
   }
   if (!ready)
-    return <section className="page narrow">Loading saved draft…</section>;
+    return <section className="page narrow report-flow">Loading saved draft…</section>;
   if (step === 0)
     return (
-      <section className="page narrow report-entry">
+      <section className="page narrow report-flow report-entry">
         <div className="eyebrow">QUICK REPORT</div>
         <h1>
           A small act.
@@ -604,7 +604,7 @@ function ReportPage({ session }: { session: Session | null }) {
           An account is optional. You can save your report to an account after
           submitting.
         </p>
-        <button className="button wide" onClick={() => S(1)}>
+        <button className="button wide report-next" onClick={() => S(1)}>
           Continue as guest →
         </button>
         <Link className="secondary wide" to="/auth">
@@ -619,7 +619,7 @@ function ReportPage({ session }: { session: Session | null }) {
   if (step === 5 && receipt) {
     const url = `${location.origin}${location.pathname}#/track/${receipt.id}/${receipt.token}`;
     return (
-      <section className="page narrow">
+      <section className="page narrow report-flow">
         <div className="eyebrow">PRIVATE RECEIPT</div>
         <h1>
           Received.
@@ -631,13 +631,13 @@ function ReportPage({ session }: { session: Session | null }) {
           the report is public, routed or acknowledged by an agency.
         </p>
         {session ? (
-          <Link className="button wide" to="/my-reports">
+          <Link className="button wide report-next" to="/my-reports">
             View in My reports →
           </Link>
         ) : (
           <>
             <Link
-              className="button wide"
+              className="button wide report-next"
               to={`/auth?claim=${receipt.id}`}
               onClick={() =>
                 sessionStorage.setItem("common-claim", JSON.stringify(receipt))
@@ -684,7 +684,7 @@ function ReportPage({ session }: { session: Session | null }) {
     );
   }
   return (
-    <section className="page narrow">
+    <section className="page narrow report-flow">
       <div className="eyebrow">
         QUICK REPORT / {session ? "SIGNED IN" : "GUEST"}
       </div>
@@ -699,8 +699,8 @@ function ReportPage({ session }: { session: Session | null }) {
       {step === 1 && (
         <>
           <h1>Where’s the issue?</h1>
-          <p>Report a condition at a government-managed street, park, airport, station, public building, or other shared place. Use public access areas only; do not enter restricted areas.</p>
-          <div className="notice">
+          {emergency !== false && <p className="report-scope-intro">Public places only. Stay in safe public access areas.</p>}
+          {emergency === false ? <div className="report-safety-summary"><span>No immediate emergency</span><button type="button" className="inline-button" onClick={() => H(null)}>Change</button></div> : <div className="notice report-safety">
             <strong>Is there an immediate emergency?</strong>
             <p>
               For fire, injury, a severe allergic reaction, downed wires or an immediate threat, contact 911
@@ -714,32 +714,42 @@ function ReportPage({ session }: { session: Session | null }) {
                 Yes / unsure
               </button>
               <button
-                className={emergency === false ? "button" : "secondary"}
+                className="secondary"
                 onClick={() => { H(false); if (!selected && !locationAsked.current) void locate(); }}
               >
                 No immediate emergency
               </button>
             </div>
-          </div>
+          </div>}
           {emergency === true ? (
             <div className="notice error" role="alert">
               Common does not dispatch emergency help. Move to a safe location
               and contact emergency services. Photo collection is paused.
             </div>
-          ) : (
+          ) : emergency === false ? (
             <>
               <div className="device-location-card">
-                <strong>Start with your current location</strong>
-                <p>Allow location access when your browser asks. We use your device’s location to position the issue pin.</p>
+
                 <button className="button" onClick={locate} disabled={busy || locating}>
                   {locating ? "Finding your location…" : "⌖ Use my location"}
                 </button>
                 <p role="status" aria-live="polite">
-                  {locating ? "Waiting for location permission and a fresh GPS reading…" : locationAccuracy !== null
-                    ? `Device location received · estimated accuracy within ${Math.round(locationAccuracy)} meters. ${locationAccuracy > 100 ? "This reading is approximate. Try again or adjust the pin before confirming." : "Check the pin before confirming the issue location."}`
-                    : "You can adjust the pin or enter coordinates instead."}
+                  {locating ? "Allow location access to position the pin…" : locationAccuracy !== null
+                    ? `Location set · estimated accuracy within ${Math.round(locationAccuracy)} meters. ${locationAccuracy > 100 ? "Approximate reading; adjust the pin." : "Check the issue pin."}`
+                    : "Drag the pin to the issue or use manual location below."}
                 </p>
               </div>
+              <GoogleReportMap
+                point={point}
+                onChange={(p) =>
+                  update({
+                    lat: p[0].toFixed(6),
+                    lng: p[1].toFixed(6),
+                    confirmed: false,
+                  })
+                }
+              />
+              <details className="report-location-options"><summary>Manual location &amp; place details</summary>
               <form
                 className="address-search"
                 onSubmit={async (e) => {
@@ -786,16 +796,6 @@ function ReportPage({ session }: { session: Session | null }) {
                   {r.label}
                 </button>
               ))}
-              <GoogleReportMap
-                point={point}
-                onChange={(p) =>
-                  update({
-                    lat: p[0].toFixed(6),
-                    lng: p[1].toFixed(6),
-                    confirmed: false,
-                  })
-                }
-              />
               <div className="coordinate-fields">
                 <label>
                   Latitude
@@ -826,6 +826,7 @@ function ReportPage({ session }: { session: Session | null }) {
                 </select>
               </label>
               <p className="muted">The responsible agency may be the municipality, a parks department, a transit authority, or an airport operator. Responsibility is reviewed before publication; agency delivery is not yet enabled.</p>
+              </details>
               <label>
                 Public location description
                 <input
@@ -841,15 +842,11 @@ function ReportPage({ session }: { session: Session | null }) {
                   checked={draft.confirmed}
                   onChange={(e) => update({ confirmed: e.target.checked })}
                 />
-                I confirm this pin marks the issue, which may differ from my
-                location.
+                This pin marks the issue, not necessarily my location.
               </label>
-              <p className="muted">
-                The pin does not establish public ownership or maintenance
-                responsibility.
-              </p>
+
               <button
-                className="button wide"
+                className="button wide report-next"
                 disabled={
                   !selected ||
                   !draft.confirmed ||
@@ -864,7 +861,7 @@ function ReportPage({ session }: { session: Session | null }) {
                 Continue to photo →
               </button>
             </>
-          )}
+          ) : null}
         </>
       )}
       {step === 2 && (
@@ -925,7 +922,7 @@ function ReportPage({ session }: { session: Session | null }) {
             />
           )}
           <button
-            className="button wide"
+            className="button wide report-next"
             disabled={!draft.file}
             onClick={() => {
               S(3);
@@ -978,7 +975,7 @@ function ReportPage({ session }: { session: Session | null }) {
             </div>
           )}
           <button
-            className="button wide"
+            className="button wide report-next"
             onClick={() => {
               if (emergencyText(draft.note)) {
                 H(true);
@@ -1016,7 +1013,7 @@ function ReportPage({ session }: { session: Session | null }) {
             By submitting you agree to the <Link to="/terms">terms</Link> and{" "}
             <Link to="/privacy">privacy notice</Link>.
           </p>
-          <button className="button wide" disabled={busy} onClick={submit}>
+          <button className="button wide report-next" disabled={busy} onClick={submit}>
             {busy ? "Saving privately…" : "Submit private report →"}
           </button>
         </>
@@ -1029,8 +1026,8 @@ function ReportPage({ session }: { session: Session | null }) {
       <button className="back" onClick={() => navigate("/")}>
         Save draft and leave
       </button>
-      <p className="muted">
-        Your unsent draft is stored on this device to survive sign-in.{" "}
+      <p className="muted report-draft-note">
+        Draft saved on this device. {" "}
         <button
           className="inline-button"
           onClick={async () => {
@@ -1532,7 +1529,7 @@ export default function App() {
     document.title = "common — Public spaces. Public record.";
   }, [route.pathname]);
   return (
-    <>
+    <div className={route.pathname === "/report" ? "report-shell" : undefined}>
       <a className="skip" href="#main">
         Skip to content
       </a>
@@ -1613,7 +1610,7 @@ export default function App() {
           </section>
         )}
       </main>
-      {route.pathname !== "/" && (
+      {route.pathname !== "/" && route.pathname !== "/report" && (
       <footer>
         <div className="footer-top">
           <Link className="wordmark" to="/">
@@ -1651,6 +1648,6 @@ export default function App() {
           Quick Report ↗
         </Link>
       )}
-    </>
+    </div>
   );
 }
