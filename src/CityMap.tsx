@@ -22,9 +22,11 @@ export default function CityMap({name,boundary,issues}:{name:string;boundary:unk
    const g=loaded as unknown as CityMapsAPI;api.current=g;
    const points=boundaryPoints(boundary),extent=new g.LatLngBounds();points.forEach(p=>extent.extend(p));
    const instance=new g.Map(root.current,{center:points[0]||{lat:42.36,lng:-71.06},zoom:13,styles:commonMapStyles,mapTypeId:'roadmap',mapTypeControl:false,streetViewControl:false,fullscreenControl:true,gestureHandling:'cooperative',clickableIcons:false});map.current=instance;
-   if(!extent.isEmpty()){cityBounds.current=extent;instance.fitBounds(extent,32);}else{await loaded.importLibrary('geocoding');const result=await new g.Geocoder().geocode({address:name+', Massachusetts, USA'});if(cancelled)return;const viewport=result.results[0]?.geometry.viewport;if(viewport){cityBounds.current=viewport;instance.fitBounds(viewport,24);const location=result.results[0].geometry.location;instance.panTo({lat:location.lat(),lng:location.lng()});instance.setZoom(14);}}
+   if(!extent.isEmpty()){cityBounds.current=extent;instance.fitBounds(extent,32);}
+   let townCenter:{lat:number;lng:number}|null=null;
+   try{await loaded.importLibrary('geocoding');const result=await new g.Geocoder().geocode({address:name+', Massachusetts, USA'});if(cancelled)return;const geometry=result.results[0]?.geometry;if(geometry){if(!cityBounds.current)cityBounds.current=geometry.viewport;townCenter={lat:geometry.location.lat(),lng:geometry.location.lng()};instance.panTo(townCenter);instance.setZoom(14);}}catch{/* A directory boundary still supplies the town view if geocoding is unavailable. */}
    if(boundary){try{instance.data.addGeoJson(boundary);instance.data.setStyle({strokeColor:'#205bd6',strokeWeight:2,fillOpacity:.025,clickable:false});}catch{/* Reports stay visible if the boundary is unavailable. */}}
-   listeners.push(instance.addListener('idle',()=>{if(!cancelled)setBounds(instance.getBounds()||null);}));setBounds(instance.getBounds()||null);setReady(true);
+   let centered=false;listeners.push(instance.addListener('idle',()=>{if(cancelled)return;if(!centered&&townCenter){centered=true;instance.panTo(townCenter);instance.setZoom(14);}setBounds(instance.getBounds()||null);}));setBounds(instance.getBounds()||null);setReady(true);
   }catch{if(!cancelled)setFailed(true);}})();
   return()=>{cancelled=true;listeners.forEach(l=>l.remove());map.current=null;api.current=null;cityBounds.current=null;if(window.gm_authFailure===failure)delete window.gm_authFailure;};
  },[name,boundary]);
