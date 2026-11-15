@@ -27,7 +27,7 @@ On PowerShell use `Copy-Item .env.example .env.local`. The example contains only
 - Repository: https://github.com/jrschwab15-netizen/common
 - Supabase project: `mtllkwmmuqmipavnxqpd`, `common`, JRS - World, `us-east-1`.
 - API: `https://mtllkwmmuqmipavnxqpd.supabase.co/functions/v1/common-api`.
-- Intended domain: `https://ourcommon.co` (not yet serving this build).
+- Intended domain: `https://ourcommon.co` (live on GitHub Pages with HTTPS; see [deployment evidence](docs/deployment-2026-11-15.md)).
 - Routing uses hash URLs: `/#/report`, `/#/places/cambridge-ma-49`, `/#/issues/<publicId>`. These reload safely on static hosting. Clean URL migration needs hosting rewrites or prerendered routes; it is not promised on Pages.
 
 ## Backend
