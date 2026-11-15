@@ -9,7 +9,7 @@ test("home stays public, guest reporting works, and emergency stops photos", asy
   await expect(
     page.getByRole("link", { name: "Sign in", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: "Quick Report ↗", exact: true }).first().click();
+  await page.getByRole("link", { name: "Quick Report", exact: true }).first().click();
   await expect(
     page.getByRole("button", { name: "Continue as guest" }),
   ).toBeVisible();

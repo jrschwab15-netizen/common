@@ -95,7 +95,7 @@ function Search({ initial = "", compact = false }: { initial?: string; compact?:
           aria-activedescendant={
             active >= 0 ? `${uid.current}-${active}` : undefined
           }
-          placeholder="Search a city, town or neighborhood"
+          placeholder={compact ? "Search for city or town" : "Search a city, town or neighborhood"}
           value={q}
           onChange={(e) => {
             Q(e.target.value);
@@ -115,9 +115,9 @@ function Search({ initial = "", compact = false }: { initial?: string; compact?:
             if (e.key === "Escape") O(false);
           }}
         />
-        <button aria-label="Search places" type="submit">
+        {!compact && <button aria-label="Search places" type="submit">
           →
-        </button>
+        </button>}
       </div>
       {open && results.length > 0 && (
         <ul className="suggestions" role="listbox" id={`${uid.current}-list`}>
@@ -1540,13 +1540,12 @@ export default function App() {
         Skip to content
       </a>
       <header className="shared-header">
-        <Link className="wordmark" to="/" aria-label="Common home"><img src={import.meta.env.BASE_URL + "brand/common-mark.png"} alt=""/>common.</Link>
+        <div className="header-left"><Link className="wordmark" to="/" aria-label="Common home"><img src={import.meta.env.BASE_URL + "brand/common-mark.png"} alt=""/>common.</Link><Search compact /></div>
+        <Link className="button small header-quick-report" to="/report"><span className="quick-report-plus" aria-hidden="true">+</span>Quick Report</Link>
         <nav aria-label="Main navigation">
           <Link to="/?section=how">How it works</Link>
           <Link to="/?section=issues">Public reports</Link>
           <Link to="/my-reports">My Reports</Link>
-          <Link className="button small" to="/report">Quick Report ↗</Link>
-          <Search compact />
           {session ? <button className="inline-button" onClick={()=>supabase.auth.signOut()}>Log out</button> : <Link to="/auth">Log in</Link>}
         </nav>
       </header>
