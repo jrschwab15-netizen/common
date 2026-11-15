@@ -1020,3 +1020,27 @@ footer > small {
 .wordmark img { width: auto; height: 47px; max-width: 43px; display: block; object-fit: contain; flex-shrink: 0; }
 @media (max-width: 600px) { .wordmark img { height: 36px; max-width: 34px; } }
 .approved-home-host { display: block; min-height: 70vh; }
+/* City issue explorer */
+.city-explorer { margin: 28px 0; padding: 26px; background: #f4f7fc; border: 1px solid #dce4ef; border-radius: 14px; }
+.city-explorer h2 { font-size: clamp(26px, 4vw, 40px); margin: 8px 0; }
+.map-toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:20px 0; }
+.map-toolbar button[aria-pressed="true"] { background:#172235; color:#fff; }
+.city-map-layout { display:grid; grid-template-columns:minmax(0, 1fr) 290px; gap:24px; }
+.city-issue-map { height:520px; width:100%; border-radius:10px; background:#e5edf4; z-index:0; }
+.map-legend { display:flex; flex-wrap:wrap; gap:12px; font-size:12px; }
+.map-insights { background:#fff; border:1px solid #dce4ef; border-radius:10px; padding:20px; min-width:0; }
+.map-insights h3 { margin-top:0; }
+.map-insights h4 { margin:24px 0 12px; }
+.map-insights p { font-size:13px; }
+.category-counts { list-style:none; margin:0; padding:0; }
+.category-counts li { display:grid; grid-template-columns:1fr auto; gap:7px; font-size:13px; margin:15px 0; }
+.category-counts meter { grid-column:1/-1; width:100%; height:9px; accent-color:#205bd6; }
+.map-area { display:block; width:100%; text-align:left; border:1px solid #dce4ef; border-radius:7px; background:#f8faff; padding:12px; margin-bottom:10px; }
+.map-area span { display:block; margin-top:5px; font-size:12px; color:#606c7d; }
+.city-issue-pin { background:#c35426; color:#fff; border:3px solid #fff; border-radius:50%; box-shadow:0 2px 7px #17223566; display:grid; place-items:center; font:bold 12px Arial,sans-serif; }
+.city-issue-pin.is-fixed { background:#287961; }
+.city-map-popup button { border:0; background:none; color:#205bd6; font-weight:700; text-align:left; padding:0; }
+.city-map-popup p { font:13px/1.5 Arial,sans-serif; }
+.city-explorer > small { display:block; margin-top:18px; color:#606c7d; }
+@media(max-width:850px) { .city-map-layout { grid-template-columns:1fr; } .city-issue-map { height:420px; } }
+@media(max-width:480px) { .city-explorer { padding:14px; margin-inline:-6px; } .city-issue-map { height:360px; } .map-toolbar button { padding:10px; font-size:12px; } }

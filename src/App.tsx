@@ -1,4 +1,5 @@
 import ApprovedHome from "./ApprovedHome";
+import CityMap from "./CityMap";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -182,6 +183,7 @@ type Issue = {
   title: string;
   category: string;
   public_location: string;
+  public_point?: unknown;
   first_reported_at: string;
   verified_fixed_at: string | null;
   maintenance_status: string;
@@ -202,11 +204,13 @@ function PlacePage() {
     [requested, R] = useState(false);
   useEffect(() => {
     let live = true;
+    B(true);
+    E("");
     (async () => {
       const { data, error } = await supabase
         .from("municipalities")
         .select(
-          "id,name,slug,county,municipality_type,source_version,imported_at,coverage(*)",
+          "id,name,slug,county,municipality_type,source_version,imported_at,boundary,coverage(*)",
         )
         .eq("slug", slug)
         .maybeSingle();
@@ -217,15 +221,25 @@ function PlacePage() {
         return;
       }
       P({ ...data, coverage: data.coverage as unknown as Coverage });
+      const collected: Issue[] = [];
+      let reportError = false;
+      for (let offset = 0; ; offset += 1000) {
       const r = await supabase
         .from("issues")
-        .select("*")
+        .select("id,public_id,title,category,public_location,public_point,first_reported_at,verified_fixed_at,maintenance_status,agency_status,verification_status,routing_delivery_status,reopened_at")
         .eq("municipality_id", data.id)
         .eq("publication_status", "published")
-        .order("first_reported_at", { ascending: false });
+        .order("first_reported_at", { ascending: false })
+        .order("id")
+        .range(offset, offset + 999);
+      if (!live) return;
+      if (r.error) { reportError = true; break; }
+      collected.push(...(r.data || []));
+      if ((r.data || []).length < 1000) break;
+      }
       if (live) {
-        I(r.data || []);
-        if (r.error) E("Published reports could not be loaded.");
+        I(collected);
+        if (reportError) E("Published reports could not be fully loaded. Map and counts may be incomplete. Please reload to retry.");
         B(false);
       }
     })();
@@ -321,6 +335,10 @@ function PlacePage() {
         </label>
       </div>
       <ErrorNotice error={error} />
+      <CityMap name={p.name} boundary={p.boundary} issues={issues.filter(i =>
+        (status === "all" || (status === "open" ? i.maintenance_status !== "verified_fixed" : i.maintenance_status === status)) &&
+        (cat === "all" || i.category === cat)
+      )} />
       {issues.length === 0 ? (
         <div className="empty">
           <h3>No Common reports yet</h3>
