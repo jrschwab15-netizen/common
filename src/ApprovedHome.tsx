@@ -90,6 +90,8 @@ export default function ApprovedHome() {
             --line:#dfe4ed; --paper:#f9fafc; --mist:#edf3ff;
             --orange:#e87951; --white:#fff; }
           ${style}
+          .hero-art.common-map-hero { aspect-ratio:1; height:auto; min-height:0; background:none; box-shadow:none; overflow:visible; }
+          .common-map-hero img { display:block; width:100%; height:auto; border-radius:12px; }
           .example-disclaimer { font-size:12px; color:#657185; padding:4px 0 19px; }
           .issue { cursor:default; }
           .issue:hover { transform:none; box-shadow:none; }
@@ -98,6 +100,17 @@ export default function ApprovedHome() {
         const content = document.createElement("div");
         content.className = "common-approved-page";
         content.innerHTML = body;
+        const heroArt = content.querySelector<HTMLElement>(".hero-art");
+        if (heroArt) {
+          heroArt.classList.add("common-map-hero");
+          const image = document.createElement("img");
+          image.src = `${import.meta.env.BASE_URL}brand/boston-map-hero.webp`;
+          image.alt = "Illustrative Boston map with Common pins, three example reports, sample counts and a sample B-plus cleanliness grade. Not real city statistics.";
+          image.width = 1280;
+          image.height = 1280;
+          image.fetchPriority = "high";
+          heroArt.replaceChildren(image);
+        }
         root.append(css, content);
         const footerCopy = content.querySelector(".footer-row > div:last-child");
         if (footerCopy) footerCopy.textContent = "Prelaunch beta · Coverage varies by community";

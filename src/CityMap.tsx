@@ -49,7 +49,7 @@ export default function CityMap({name,boundary,issues}:{name:string;boundary:unk
    const locations=new Map<string,MapIssue[]>();for(const issue of mapped){const key=publicPoint(issue.public_point)!.join(',');locations.set(key,[...(locations.get(key)||[]),issue]);}
    for(const items of locations.values()){
     const open=items.some(i=>i.maintenance_status!=='verified_fixed');
-    const icon=L.divIcon({className:`city-issue-pin ${open?'is-open':'is-fixed'}`,html:`<span>${items.length>1?items.length:'●'}</span>`,iconSize:[30,30],iconAnchor:[15,15]});
+    const icon=L.divIcon({className:`city-issue-pin common-city-pin ${open?'is-open':'is-fixed'}`,html:`<img src="${import.meta.env.BASE_URL}brand/common-map-pin.png" alt="" /><span class="pin-status" aria-hidden="true"></span>${items.length>1?`<span class="pin-count">${items.length}</span>`:''}`,iconSize:[40,54],iconAnchor:[20,54],popupAnchor:[0,-48]});
     const marker=L.marker(publicPoint(items[0].public_point)!,{icon,title:items.map(i=>i.title).join('; '),alt:`${items.length} published case${items.length===1?'':'s'}: ${items[0].title}`}).bindPopup(popup(items),{maxWidth:Math.max(140,Math.min(280,(root.current?.clientWidth||320)-70))}).addTo(group);
     marker.getElement()?.setAttribute("aria-label",items.map(i=>i.title).join("; "));
    }

@@ -12,6 +12,7 @@ test('city map shows published locations, synchronized filters, and concentratio
  await page.goto('/#/places/cambridge-test');
  await expect(page.getByRole('heading',{name:'Cambridge issue map'})).toBeVisible();
  await expect(page.locator('.city-issue-pin')).toHaveCount(3);
+ await expect(page.locator('.common-city-pin > img').first()).toHaveAttribute('src', /common-map-pin\.png$/);
  await expect(page.getByText('3 mapped cases · 1 without a reviewed public location · 3 in this view')).toBeVisible();
  await expect(page.locator('.map-area').first()).toContainText('2 open');
  await page.locator('.map-area').first().click();

@@ -1054,3 +1054,9 @@ footer > small {
 .google-report-map { height:400px; width:100%; background:#edf1f5; }
 .report-map-help, .report-map-card > p { padding:0 20px; font-size:13px; line-height:1.6; color:#52647c; }
 @media(max-width:600px) { .google-report-map { height:360px; } .device-location-card { padding:18px; } }
+.common-report-pin { display:block; width:40px; height:54px; object-fit:contain; filter:drop-shadow(0 2px 3px #17223544); }
+.city-issue-pin.common-city-pin, .city-issue-pin.common-city-pin.is-fixed { background:transparent; border:0; border-radius:0; box-shadow:none; position:absolute; display:block; }
+.common-city-pin > img { width:40px; height:54px; display:block; object-fit:contain; filter:drop-shadow(0 2px 3px #17223544); }
+.common-city-pin .pin-status { position:absolute; right:-2px; bottom:7px; width:10px; height:10px; border:1px solid #fff; border-radius:50%; background:#c35426; }
+.common-city-pin.is-fixed .pin-status { background:#287961; }
+.common-city-pin .pin-count { position:absolute; right:-8px; top:-6px; min-width:20px; height:20px; padding:2px; background:#205bd6; border-radius:10px; color:#fff; text-align:center; font:bold 12px Arial,sans-serif; }
