@@ -44,7 +44,7 @@ export type CityMapsAPI = {
  LatLng:new(lat:number,lng:number)=>unknown;
  OverlayView:new()=>CityOverlay;
  Circle:new(options:Record<string,unknown>)=>{setMap:(map:CityGoogleMap|null)=>void};
- Geocoder:new()=>{geocode:(request:{address:string})=>Promise<{results:{geometry:{viewport:CityBounds}}[]}>};
+ Geocoder:new()=>{geocode:(request:{address:string})=>Promise<{results:{geometry:{viewport:CityBounds;location:{lat:()=>number;lng:()=>number}}}[]}>};
 };
 export const commonMapStyles = [
  {featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]},
