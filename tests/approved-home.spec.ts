@@ -3,7 +3,7 @@ for (const [width, height] of [[1440,900],[768,1024],[390,844],[320,700]]) {
  test(`approved homepage fits ${width}x${height}`, async ({page}, testInfo) => {
   await page.setViewportSize({width,height});
   await page.goto('/');
-  await expect(page.getByRole('heading',{name:/A better street/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/A public record/})).toBeVisible();
   await expect(page.locator('.common-map-hero img')).toHaveAttribute('src', /boston-map-hero\.webp$/);
   expect(await page.locator('.common-approved-page').innerText()).not.toMatch(/\b(?:concept|demo)\b/i);
   await expect(page.locator('.approved-home-host .issue')).toHaveCount(4);

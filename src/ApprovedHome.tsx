@@ -98,19 +98,22 @@ export default function ApprovedHome() {
           .place-matches[role="status"]:empty { display:none; }
           .report-photo-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
           .report-photo-example { min-width:0; margin:0; }
-          .report-example-image { position:relative; height:510px; border-radius:14px; overflow:hidden; background:#314155; }
+          .report-example-image { position:relative; height:390px; border-radius:14px; overflow:hidden; background:#314155; }
           .report-example-photo { width:100%; height:100%; object-fit:cover; display:block; }
           .report-example-city { position:absolute; left:16px; top:16px; color:#172235; background:#ffffffed; padding:7px 12px; border-radius:20px; font-weight:700; font-size:12px; }
-          .report-example-ui { position:absolute; left:14px; right:14px; bottom:14px; padding:18px; border-radius:12px; background:#fffffff5; color:#172235; box-shadow:0 8px 30px #07182f33; }
+          .report-example-ui { position:relative; margin:-22px 12px 0; padding:13px 14px; border-radius:12px; background:#fff; color:#172235; box-shadow:0 8px 25px #07182f33; border:1px solid #dfe4ed; }
           .report-example-brand { display:flex; align-items:center; gap:10px; }
-          .report-example-brand img { width:28px; height:38px; object-fit:contain; }
+          .report-example-brand img { width:19px; height:26px; object-fit:contain; }
+          .report-example-brand strong { font-size:12px; }
           .report-example-brand small { display:block; font-size:10px; color:#657185; }
-          .report-example-ui h3 { font-size:20px; margin:16px 0 12px; }
+          .report-example-ui h3 { font-size:16px; margin:10px 0; }
+          .report-example-progress { display:flex; gap:10px; justify-content:space-between; border-bottom:1px solid #dfe4ed; margin-top:10px; padding-bottom:7px; color:#657185; font-size:9px; }
+          .report-example-progress .current { color:#205bd6; font-weight:700; }
           .report-example-choices { display:flex; gap:7px; flex-wrap:wrap; }
-          .report-example-choices button { border:1px solid #d1ddee; background:#fff; color:#172235; border-radius:20px; padding:8px 10px; font:600 12px/1.3 Arial,sans-serif; cursor:pointer; }
+          .report-example-choices button { border:1px solid #d1ddee; background:#fff; color:#172235; border-radius:6px; padding:7px 9px; font:600 11px/1.3 Arial,sans-serif; cursor:pointer; }
           .report-example-choices button[aria-pressed="true"] { color:#fff; background:#205bd6; border-color:#205bd6; }
-          .report-example-selection { font-size:12px; color:#52647c; margin:12px 0; }
-          .report-example-ui .btn { width:100%; padding:12px 7px; font-size:12px; }
+          .report-example-selection { font-size:11px; color:#52647c; margin:8px 0; }
+          .report-example-ui .btn { width:100%; padding:9px 7px; font-size:11px; }
           .report-example-caption h3 { margin:18px 0 5px; font-size:19px; }
           .report-example-caption p { margin:0; font-size:12px; color:#c4d2e5; }
           .report-example-credit { margin:8px 0 0; font-size:10px; line-height:1.6; color:#b9cce2; }
@@ -120,12 +123,17 @@ export default function ApprovedHome() {
           .place-scope-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; margin:32px 0; }
           .place-scope-grid h3 { font-size:19px; margin-bottom:10px; }
           .place-scope-grid p { font-size:14px; color:#52647c; }
-          @media(max-width:1000px) { .report-photo-grid { grid-template-columns:1fr; } .report-example-image { height:540px; } .report-example-ui { max-width:360px; } }
-          @media(max-width:680px) { .place-scope-grid { grid-template-columns:1fr; gap:12px; } .report-example-image { height:480px; } .shared-place-scope { padding:55px 0; } }
+          @media(max-width:1000px) { .report-photo-grid { grid-template-columns:1fr; } .report-example-image { height:440px; } .report-example-ui { max-width:360px; } }
+          @media(max-width:680px) { .place-scope-grid { grid-template-columns:1fr; gap:12px; } .report-example-image { height:360px; } .shared-place-scope { padding:55px 0; } }
         `;
         const content = document.createElement("div");
         content.className = "common-approved-page";
         content.innerHTML = body;
+        content.querySelectorAll(".report-photo-example").forEach(card => {
+          const photo = card.querySelector(".report-example-image");
+          const portal = card.querySelector(".report-example-ui");
+          if (photo && portal) photo.after(portal);
+        });
         const heroArt = content.querySelector<HTMLElement>(".hero-art");
         if (heroArt) {
           heroArt.classList.add("common-map-hero");

@@ -4,7 +4,7 @@ test("home stays public, guest reporting works, and emergency stops photos", asy
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: /A better street/ }),
+    page.getByRole("heading", { name: /A public record/ }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Sign in", exact: true }),
