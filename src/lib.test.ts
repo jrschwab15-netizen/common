@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ageLabel, emergencyText, validPoint } from "./lib";
+import { ageLabel, emergencyText, validPoint, reportPlaceLabel, categories } from "./lib";
+import serverSource from "../supabase/functions/common-api/index.ts?raw";
 describe("issue history clocks", () => {
   it("keeps the first report clock", () => {
     expect(
@@ -26,6 +27,9 @@ describe("safety input gates", () => {
     "live wire",
     "a fire by the drain",
     "injured person",
+    "severe allergic reaction",
+    "difficulty breathing",
+    "anaphylaxis after a sting",
   ])("detects emergency %s", (text) => expect(emergencyText(text)).toBe(true));
   it("keeps ordinary intake available", () =>
     expect(emergencyText("Litter beside the public bin")).toBe(false));
@@ -33,5 +37,25 @@ describe("safety input gates", () => {
     expect(validPoint(91, -71)).toBe(false);
     expect(validPoint(42, NaN)).toBe(false);
     expect(validPoint(42.3, -71.1)).toBe(true);
+  });
+});
+describe("public-place report intake", () => {
+  it("keeps non-emergency nest reports available", () => {
+    expect(emergencyText("Wasp nest beside a public path; no immediate threat" )).toBe(false);
+  });
+  it("preserves facility context in the existing private location field", () => {
+    expect(reportPlaceLabel("  Terminal B public entrance  ", "Airport / public terminal")).toBe("Airport / public terminal · Terminal B public entrance");
+    expect(reportPlaceLabel("Park entrance")).toBe("Park entrance");
+  });
+  it("keeps frontend and server category validation aligned", () => {
+    const server = serverSource.match(/const categories=(\[[^;]+\]);/)![1];
+    expect(JSON.parse(server.replaceAll("'", '"'))).toEqual(categories);
+  });
+  it("enforces the same emergency gate on the server", () => {
+    const pattern = serverSource.match(/if\(\/(downed[^\n]+)\/i\.test\(b\.note\)\)/)![1];
+    const serverEmergency = new RegExp(pattern, "i");
+    for (const note of ["a fire by the drain", "injured person", "severe allergic reaction", "difficulty breathing", "wasp nest beside a public path"]) {
+      expect(serverEmergency.test(note)).toBe(emergencyText(note));
+    }
   });
 });

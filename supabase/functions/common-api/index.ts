@@ -3,7 +3,7 @@ import {imageSize} from 'npm:image-size@2.0.2';
 const url=Deno.env.get('SUPABASE_URL')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const db=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
 const allowed=new Set(['https://ourcommon.co','https://www.ourcommon.co','http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:4173']);
-const categories=['Litter / public bins','Illegal dumping','Pothole / road damage','Sidewalk obstruction','Public graffiti','Park / trail maintenance','Signs / drains / lighting','Roadkill','Other public infrastructure'];
+const categories=['Litter / public bins','Illegal dumping','Pothole / road damage','Sidewalk obstruction','Public graffiti','Park / trail maintenance','Signs / drains / lighting','Roadkill','Stinging insects / nests','Other non-emergency safety hazard','Other public infrastructure'];
 const uuid=(s:unknown):s is string=>typeof s==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 const tokenValid=(s:unknown):s is string=>typeof s==='string'&&/^[0-9a-f]{64}$/.test(s);
 const hex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -28,7 +28,7 @@ Deno.serve(async req=>{
  await limited(`intake:${network}:${Math.floor(Date.now()/3600000)}`,10,3600);
  if(!uuid(b.idempotency_key)||typeof b.lat!=='number'||typeof b.lng!=='number'||!Number.isFinite(b.lat)||!Number.isFinite(b.lng)||b.lat< -90||b.lat>90||b.lng< -180||b.lng>180)fail('Confirm a valid issue location.');
  if(typeof b.note!=='string'||b.note.length>500||typeof b.place_label!=='string'||b.place_label.trim().length<2||b.place_label.length>200||!categories.includes(b.category))fail('Invalid report details.');
- if(b.confirmed!==true)fail('Confirm the issue pin.');if(/downed.{0,15}(line|wire)|live.{0,10}wire|\bfire\b|\binjur(y|ies|ed)\b|immediate.{0,15}danger/i.test(b.note))fail('This may be an emergency. Move to safety and contact emergency services; Common does not dispatch help.');
+ if(b.confirmed!==true)fail('Confirm the issue pin.');if(/downed.{0,15}(line|wire)|live.{0,10}wire|\bfire\b|\binjur(y|ies|ed)\b|immediate.{0,15}danger|anaphyla(?:xis|ctic)|severe.{0,15}allergic.{0,10}reaction|(?:trouble|difficulty).{0,10}breathing/i.test(b.note))fail('This may be an emergency. Move to safety and contact emergency services; Common does not dispatch help.');
  if(!['image/jpeg','image/png','image/webp'].includes(b.mime)||!Number.isInteger(b.bytes)||b.bytes<1||b.bytes>10485760)fail('Invalid photo type or size.');
  const token=await receiptToken(b.idempotency_key);let{data:record,error}=await db.from('submissions').select('*').eq('idempotency_key',b.idempotency_key).maybeSingle();if(error)fail('Could not check submission. Please retry.',503);
  if(record&&(record.claim_revoked_at||record.user_id!==userId))fail('This report belongs to a different session.',403);

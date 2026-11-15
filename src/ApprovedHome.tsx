@@ -96,6 +96,32 @@ export default function ApprovedHome() {
           .issue { cursor:default; }
           .issue:hover { transform:none; box-shadow:none; }
           .place-matches[role="status"]:empty { display:none; }
+          .report-photo-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+          .report-photo-example { min-width:0; margin:0; }
+          .report-example-image { position:relative; height:510px; border-radius:14px; overflow:hidden; background:#314155; }
+          .report-example-photo { width:100%; height:100%; object-fit:cover; display:block; }
+          .report-example-city { position:absolute; left:16px; top:16px; color:#172235; background:#ffffffed; padding:7px 12px; border-radius:20px; font-weight:700; font-size:12px; }
+          .report-example-ui { position:absolute; left:14px; right:14px; bottom:14px; padding:18px; border-radius:12px; background:#fffffff5; color:#172235; box-shadow:0 8px 30px #07182f33; }
+          .report-example-brand { display:flex; align-items:center; gap:10px; }
+          .report-example-brand img { width:28px; height:38px; object-fit:contain; }
+          .report-example-brand small { display:block; font-size:10px; color:#657185; }
+          .report-example-ui h3 { font-size:20px; margin:16px 0 12px; }
+          .report-example-choices { display:flex; gap:7px; flex-wrap:wrap; }
+          .report-example-choices button { border:1px solid #d1ddee; background:#fff; color:#172235; border-radius:20px; padding:8px 10px; font:600 12px/1.3 Arial,sans-serif; cursor:pointer; }
+          .report-example-choices button[aria-pressed="true"] { color:#fff; background:#205bd6; border-color:#205bd6; }
+          .report-example-selection { font-size:12px; color:#52647c; margin:12px 0; }
+          .report-example-ui .btn { width:100%; padding:12px 7px; font-size:12px; }
+          .report-example-caption h3 { margin:18px 0 5px; font-size:19px; }
+          .report-example-caption p { margin:0; font-size:12px; color:#c4d2e5; }
+          .report-example-credit { margin:8px 0 0; font-size:10px; line-height:1.6; color:#b9cce2; }
+          .report-example-credit a { color:inherit; text-decoration:underline; }
+          .shared-place-scope { background:#edf3ff; padding:80px 0; }
+          .shared-place-scope h2 { font-size:clamp(34px,4vw,56px); max-width:750px; margin:18px 0; }
+          .place-scope-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; margin:32px 0; }
+          .place-scope-grid h3 { font-size:19px; margin-bottom:10px; }
+          .place-scope-grid p { font-size:14px; color:#52647c; }
+          @media(max-width:1000px) { .report-photo-grid { grid-template-columns:1fr; } .report-example-image { height:540px; } .report-example-ui { max-width:360px; } }
+          @media(max-width:680px) { .place-scope-grid { grid-template-columns:1fr; gap:12px; } .report-example-image { height:480px; } .shared-place-scope { padding:55px 0; } }
         `;
         const content = document.createElement("div");
         content.className = "common-approved-page";
@@ -126,7 +152,10 @@ export default function ApprovedHome() {
           if (!action) return;
           if (action.matches("[data-report]")) {
             event.preventDefault();
-            report();
+            if (action.dataset.reportCategory) {
+              const params = new URLSearchParams({ category: action.dataset.reportCategory, place_type: action.dataset.reportPlace || "" });
+              navigate(`/report?${params}`);
+            } else report();
             return;
           }
           if (action.id === "myReportsNav") {
@@ -144,6 +173,16 @@ export default function ApprovedHome() {
               } else scrollTo(href.slice(1));
             }
           }
+        });
+        content.querySelectorAll<HTMLButtonElement>("[data-preview-category]").forEach(button => {
+          button.addEventListener("click", () => {
+            const card = button.closest(".report-photo-example");
+            card?.querySelectorAll("[data-preview-category]").forEach(option => option.setAttribute("aria-pressed", String(option === button)));
+            const selected = card?.querySelector(".report-example-selection");
+            if (selected) selected.textContent = `Selected: ${button.textContent}`;
+            const start = card?.querySelector<HTMLElement>("[data-report]");
+            if (start) start.dataset.reportCategory = button.dataset.previewCategory;
+          });
         });
 
         // Restore live Supabase municipality/alias search in the approved card.

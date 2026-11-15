@@ -22,8 +22,18 @@ export const categories = [
   "Park / trail maintenance",
   "Signs / drains / lighting",
   "Roadkill",
+  "Stinging insects / nests",
+  "Other non-emergency safety hazard",
   "Other public infrastructure",
 ];
+export const publicPlaceTypes = [
+  "Street / sidewalk", "Park / trail / playground", "Airport / public terminal",
+  "Train / subway / bus station", "Public building / plaza", "Public waterfront / beach",
+  "Other / unsure public place",
+];
+export function reportPlaceLabel(place: string, type = "") {
+  return type && publicPlaceTypes.includes(type) ? `${type} · ${place.trim()}` : place.trim();
+}
 export type Place = {
   id: string;
   name: string;
@@ -95,7 +105,7 @@ export function ageLabel(
     : `${days} ${days === 1 ? "day" : "days"} since first reported`;
 }
 export function emergencyText(note: string) {
-  return /downed.{0,15}(line|wire)|live.{0,10}wire|\bfire\b|\binjur(y|ies|ed)\b|immediate.{0,15}danger/i.test(
+  return /downed.{0,15}(line|wire)|live.{0,10}wire|\bfire\b|\binjur(y|ies|ed)\b|immediate.{0,15}danger|anaphyla(?:xis|ctic)|severe.{0,15}allergic.{0,10}reaction|(?:trouble|difficulty).{0,10}breathing/i.test(
     note,
   );
 }

@@ -18,6 +18,8 @@ import {
   api,
   ageLabel,
   categories,
+  publicPlaceTypes,
+  reportPlaceLabel,
   emergencyText,
   supabase,
   validatePhoto,
@@ -410,6 +412,7 @@ function IssueCard({ issue: i }: { issue: Issue }) {
   );
 }
 type Draft = {
+  place_type?: string;
   lat: string;
   lng: string;
   place_label: string;
@@ -420,6 +423,7 @@ type Draft = {
   idempotency_key: string;
 };
 const newDraft = (): Draft => ({
+  place_type: "",
   lat: "",
   lng: "",
   place_label: "",
@@ -430,6 +434,9 @@ const newDraft = (): Draft => ({
   idempotency_key: crypto.randomUUID(),
 });
 function ReportPage({ session }: { session: Session | null }) {
+  const [reportParams] = useSearchParams();
+  const presetCategory = reportParams.get("category") || "";
+  const presetPlaceType = reportParams.get("place_type") || "";
   const [step, S] = useState(session ? 1 : 0),
     [draft, D] = useState<Draft>(newDraft),
     [ready, V] = useState(false),
@@ -451,7 +458,10 @@ function ReportPage({ session }: { session: Session | null }) {
   const navigate = useNavigate();
   useEffect(() => {
     get<Draft>("common-draft").then((d) => {
-      if (d) D(d);
+      D({ ...(d || newDraft()),
+        ...(categories.includes(presetCategory) ? { category: presetCategory } : {}),
+        ...(publicPlaceTypes.includes(presetPlaceType) ? { place_type: presetPlaceType } : {}),
+      });
       V(true);
     });
   }, []);
@@ -524,6 +534,7 @@ function ReportPage({ session }: { session: Session | null }) {
     E("");
     try {
       if (!draft.file) throw Error("A photo is required.");
+      if (reportPlaceLabel(draft.place_label, draft.place_type).length > 200) throw Error("Shorten the location description so it fits with the selected place type.");
       if (emergencyText(draft.note)) {
         H(true);
         S(1);
@@ -538,6 +549,7 @@ function ReportPage({ session }: { session: Session | null }) {
         status: string;
       }>("intake", {
         ...draft,
+        place_label: reportPlaceLabel(draft.place_label, draft.place_type),
         file: undefined,
         lat: Number(draft.lat),
         lng: Number(draft.lng),
@@ -687,10 +699,11 @@ function ReportPage({ session }: { session: Session | null }) {
       {step === 1 && (
         <>
           <h1>Where’s the issue?</h1>
+          <p>Report a condition at a government-managed street, park, airport, station, public building, or other shared place. Use public access areas only; do not enter restricted areas.</p>
           <div className="notice">
             <strong>Is there an immediate emergency?</strong>
             <p>
-              For fire, injury, downed wires or an immediate threat, contact 911
+              For fire, injury, a severe allergic reaction, downed wires or an immediate threat, contact 911
               or the emergency utility. Never approach a hazard to take a photo.
             </p>
             <div className="actions">
@@ -806,9 +819,17 @@ function ReportPage({ session }: { session: Session | null }) {
                 </label>
               </div>
               <label>
+                Public place type
+                <select value={draft.place_type || ""} onChange={e => update({ place_type: e.target.value })}>
+                  <option value="">Choose a place type (optional)</option>
+                  {publicPlaceTypes.map(type => <option key={type}>{type}</option>)}
+                </select>
+              </label>
+              <p className="muted">The responsible agency may be the municipality, a parks department, a transit authority, or an airport operator. Responsibility is reviewed before publication; agency delivery is not yet enabled.</p>
+              <label>
                 Public location description
                 <input
-                  maxLength={200}
+                  maxLength={200 - (draft.place_type ? draft.place_type.length + 3 : 0)}
                   value={draft.place_label}
                   onChange={(e) => update({ place_label: e.target.value })}
                   placeholder="For example: sidewalk beside the library"
@@ -937,6 +958,9 @@ function ReportPage({ session }: { session: Session | null }) {
             Image category suggestions are not yet enabled. Choose the closest
             category.
           </p>
+          {(draft.category === "Stinging insects / nests" || draft.category === "Other non-emergency safety hazard") && (
+            <div className="notice" role="status">Keep a safe distance. Do not touch, disturb, or try to remove a nest, and do not approach a hazard to take a photo. Report an insect nest only when it affects safe use of a public place; its presence alone does not establish a hazard. For immediate danger or a severe allergic reaction, call 911.</div>
+          )}
           <label>
             Note <span className="muted">(optional)</span>
             <textarea
@@ -977,7 +1001,7 @@ function ReportPage({ session }: { session: Session | null }) {
             />
           )}
           <h3>{draft.category}</h3>
-          <p>{draft.place_label}</p>
+          <p>{reportPlaceLabel(draft.place_label, draft.place_type)}</p>
           <p className="muted">
             {Number(draft.lat).toFixed(6)}, {Number(draft.lng).toFixed(6)}
           </p>

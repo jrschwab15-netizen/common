@@ -1,0 +1,5 @@
+# Reporting example photographs
+
+- Boston, MA: [boston-common.jpg](https://commons.wikimedia.org/wiki/File:Boston_Common_(7194230690).jpg), InSapphoWeTrust · 2012 · CC BY-SA 2.0. [License](https://creativecommons.org/licenses/by-sa/2.0/). Local web rendition is resized/cropped; the reporting UI is a separate overlay. Source photograph does not document a current Common issue.
+- New York, NY: [nyc-sidewalk.jpg](https://commons.wikimedia.org/wiki/File:NYC_-_trash_on_sidewalk.jpg), Jess Hawsor · 2017 · CC BY-SA 4.0. [License](https://creativecommons.org/licenses/by-sa/4.0/). Local web rendition is resized/cropped; the reporting UI is a separate overlay. Source photograph does not document a current Common issue.
+- Chicago, IL: [chicago-bins.jpg](https://commons.wikimedia.org/wiki/File:Trash_cans_(38690442621).jpg), Eric Fischer · 2017 · CC BY 2.0. [License](https://creativecommons.org/licenses/by/2.0/). Local web rendition is resized/cropped; the reporting UI is a separate overlay. Source photograph does not document a current Common issue.
