@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env*
+!.env.example
+test-results/
+playwright-report/
+data/*.geojson
+data/*.sql
+data/*.zip
+data/*.dbf
+.supabase/
+tools/
+supabase/core.sql
+data/aliases/
+data/aliases-validated.json
+supabase/.temp/

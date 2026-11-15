@@ -1,0 +1,50 @@
+{
+  "source_url": "https://s3.us-east-1.amazonaws.com/download.massgis.digital.mass.gov/shapefiles/state/TOWNNAME_LOOKUP.zip",
+  "metadata_url": "https://www.mass.gov/info-details/massgis-data-massachusetts-community-names-lookup-table",
+  "retrieved_at": "2026-11-15T17:10:03.850Z",
+  "source_version": "dbf-2026-03-05",
+  "checksum": "a768fbf7ca625b5d7427bd38f7ac7967265ad67012b6d7e253404995825d6e02",
+  "dbf_checksum": "d29d6537116d11c4e1cdad4239b65d01ad5eef99ebb6046a8c4a177f6b7c3219",
+  "records": 4947,
+  "approved_aliases": 4942,
+  "unmatched": 0,
+  "encoding": "UTF-8",
+  "license": "MassGIS public records; see source metadata",
+  "fields": [
+    {
+      "name": "ALT_NAME",
+      "type": "C",
+      "length": 36
+    },
+    {
+      "name": "ALT_NAME_U",
+      "type": "C",
+      "length": 36
+    },
+    {
+      "name": "TOWN",
+      "type": "C",
+      "length": 26
+    },
+    {
+      "name": "TOWN_ID",
+      "type": "N",
+      "length": 19
+    },
+    {
+      "name": "COUNTY",
+      "type": "C",
+      "length": 16
+    },
+    {
+      "name": "COMMENTS",
+      "type": "C",
+      "length": 75
+    },
+    {
+      "name": "TOWN_U",
+      "type": "C",
+      "length": 25
+    }
+  ]
+}

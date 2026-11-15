@@ -1,0 +1,4 @@
+project_id = "common"
+[functions.common-api]
+verify_jwt = false
+# Guest actions use receipt capabilities; authenticated actions independently verify Auth JWTs.

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+# Hash-routed private views additionally set noindex and never enter a sitemap.

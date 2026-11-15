@@ -1,0 +1,115 @@
+{
+  "source_url": "https://services1.arcgis.com/hGdibHYSPO59RG1h/arcgis/rest/services/Massachusetts_Municipalities_Hosted/FeatureServer/0/query?where=1%3D1&outFields=TOWN,TOWN_ID,TYPE,COUNTY&outSR=4326&f=geojson&orderByFields=TOWN_ID",
+  "metadata_url": "https://www.arcgis.com/sharing/rest/content/items/54538f2f92d04c34957e6c2d460d0e5a?f=json",
+  "owner": "MassGIS",
+  "retrieved_at": "2026-11-15T16:56:19.888Z",
+  "source_version": "2024-04-18T20:55:37.989Z",
+  "item_modified": "2026-05-14T04:28:30.000Z",
+  "checksum": "8e08fadf69009bfe39c47d2ffdae1c4c17de6753f5859317efae982df8a8073e",
+  "record_count": 351,
+  "original_crs": {
+    "wkid": 26986,
+    "latestWkid": 26986
+  },
+  "output_crs": "EPSG:4326",
+  "license": "<p>These data are public records.</p>\n<p><font color='#b22222'>Authoritative determination of municipal boundary locations can only be provided by a licensed land surveyor. MassGIS regularly makes corrections or refinements to this data layer as information becomes available.</font></p>",
+  "geometry_repairs": [],
+  "fields": [
+    {
+      "name": "OBJECTID",
+      "domain": null
+    },
+    {
+      "name": "TOWN",
+      "domain": null
+    },
+    {
+      "name": "TOWN_ID",
+      "domain": null
+    },
+    {
+      "name": "TYPE",
+      "domain": {
+        "type": "codedValue",
+        "name": "Town_Govt_Type",
+        "mergePolicy": "esriMPTDefaultValue",
+        "splitPolicy": "esriSPTDefaultValue",
+        "description": "Town Govt Type",
+        "codedValues": [
+          {
+            "name": "City",
+            "code": "C"
+          },
+          {
+            "name": "Town",
+            "code": "T"
+          },
+          {
+            "name": "Town with city gov't.",
+            "code": "TC"
+          }
+        ]
+      }
+    },
+    {
+      "name": "COUNTY",
+      "domain": null
+    },
+    {
+      "name": "FIPS_STCO",
+      "domain": null
+    },
+    {
+      "name": "FOURCOLOR",
+      "domain": null
+    },
+    {
+      "name": "POP1960",
+      "domain": null
+    },
+    {
+      "name": "POP1970",
+      "domain": null
+    },
+    {
+      "name": "POP1980",
+      "domain": null
+    },
+    {
+      "name": "POP1990",
+      "domain": null
+    },
+    {
+      "name": "POP2000",
+      "domain": null
+    },
+    {
+      "name": "POP2010",
+      "domain": null
+    },
+    {
+      "name": "POP2020",
+      "domain": null
+    },
+    {
+      "name": "POPCH10_20",
+      "domain": null
+    },
+    {
+      "name": "AREA_ACRES",
+      "domain": null
+    },
+    {
+      "name": "AREA_SQMI",
+      "domain": null
+    },
+    {
+      "name": "Shape__Area",
+      "domain": null
+    },
+    {
+      "name": "Shape__Length",
+      "domain": null
+    }
+  ]
+}

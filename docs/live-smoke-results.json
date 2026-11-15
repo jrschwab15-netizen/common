@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-11-15T17:23:08.269Z",
+  "project_ref": "mtllkwmmuqmipavnxqpd",
+  "checks": [
+    "Live directory: 351 unique municipalities",
+    "Five known municipality searches",
+    "Unauthenticated owner endpoint denied",
+    "Anonymous private table read denied",
+    "Claim hashes inaccessible",
+    "Unknown receipt denied",
+    "Original bucket cannot be enumerated"
+  ]
+}
