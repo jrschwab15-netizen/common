@@ -1044,3 +1044,13 @@ footer > small {
 .city-explorer > small { display:block; margin-top:18px; color:#606c7d; }
 @media(max-width:850px) { .city-map-layout { grid-template-columns:1fr; } .city-issue-map { height:420px; } }
 @media(max-width:480px) { .city-explorer { padding:14px; margin-inline:-6px; } .city-issue-map { height:360px; } .map-toolbar button { padding:10px; font-size:12px; } }
+.device-location-card { margin:24px 0; padding:22px; border:1px solid #d8e3f5; background:#f1f6ff; border-radius:14px; }
+.device-location-card > strong { font-size:19px; color:#172235; }
+.device-location-card p { margin:10px 0 16px; font-size:14px; line-height:1.6; }
+.device-location-card p[role="status"] { margin-bottom:0; color:#52647c; }
+.report-map-card { margin:24px 0; border:1px solid #dce4ef; border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 8px 30px #17345b0a; }
+.report-map-heading { padding:16px 20px; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+.report-map-heading span { font-size:12px; color:#657185; }
+.google-report-map { height:400px; width:100%; background:#edf1f5; }
+.report-map-help, .report-map-card > p { padding:0 20px; font-size:13px; line-height:1.6; color:#52647c; }
+@media(max-width:600px) { .google-report-map { height:360px; } .device-location-card { padding:18px; } }

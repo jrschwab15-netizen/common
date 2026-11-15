@@ -12,7 +12,7 @@ import {
 } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { get, set, del } from "idb-keyval";
-import L from "leaflet";
+import GoogleReportMap from "./GoogleReportMap";
 import "leaflet/dist/leaflet.css";
 import {
   api,
@@ -409,65 +409,6 @@ function IssueCard({ issue: i }: { issue: Issue }) {
     </Link>
   );
 }
-function PinMap({
-  point,
-  onChange,
-}: {
-  point: [number, number];
-  onChange: (p: [number, number]) => void;
-}) {
-  const root = useRef<HTMLDivElement>(null),
-    map = useRef<L.Map | null>(null),
-    marker = useRef<L.Marker | null>(null);
-  const change = useRef(onChange);
-  change.current = onChange;
-  useEffect(() => {
-    if (!root.current) return;
-    map.current = L.map(root.current).setView(point, 16);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-    }).addTo(map.current);
-    marker.current = L.marker(point, {
-      draggable: true,
-      icon: L.divIcon({
-        className: "pin-icon",
-        html: '<span aria-hidden="true">●</span>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-      }),
-    }).addTo(map.current);
-    marker.current.on("dragend", () => {
-      const p = marker.current!.getLatLng();
-      change.current([p.lat, p.lng]);
-    });
-    map.current.on("click", (e) =>
-      change.current([e.latlng.lat, e.latlng.lng]),
-    );
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
-  }, []);
-  useEffect(() => {
-    marker.current?.setLatLng(point);
-    map.current?.panTo(point);
-  }, [point]);
-  return (
-    <>
-      <div
-        className="map"
-        ref={root}
-        aria-label="Issue location map. Drag the pin or enter coordinates below."
-      />
-      <small>
-        Move the pin to the issue. Keyboard users can edit latitude and
-        longitude below. Map tiles are provided by OpenStreetMap.
-      </small>
-    </>
-  );
-}
 type Draft = {
   lat: string;
   lng: string;
@@ -499,6 +440,14 @@ function ReportPage({ session }: { session: Session | null }) {
     [preview, P] = useState(""),
     [address, A] = useState(""),
     [found, F] = useState<{ label: string; lat: number; lng: number }[]>([]);
+  const [locating, setLocating] = useState(false);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const locationRequest = useRef(0);
+  const locationAsked = useRef(false);
+  useEffect(() => () => { ++locationRequest.current; }, []);
+  useEffect(() => {
+    if (step !== 1) { ++locationRequest.current; setLocating(false); }
+  }, [step]);
   const navigate = useNavigate();
   useEffect(() => {
     get<Draft>("common-draft").then((d) => {
@@ -521,10 +470,17 @@ function ReportPage({ session }: { session: Session | null }) {
   useEffect(() => {
     if (session && step === 0) S(1);
   }, [session]);
-  const update = (v: Partial<Draft>) => D((d) => ({ ...d, ...v }));
+  const update = (v: Partial<Draft>) => {
+    if (v.lat !== undefined || v.lng !== undefined) {
+      ++locationRequest.current;
+      setLocating(false);
+      setLocationAccuracy(null);
+    }
+    D((d) => ({ ...d, ...v }));
+  };
   const point: [number, number] = [
-    Number(draft.lat) || 42.36,
-    Number(draft.lng) || -71.06,
+    draft.lat !== "" && validPoint(Number(draft.lat), Number(draft.lng)) ? Number(draft.lat) : 42.36,
+    draft.lng !== "" && validPoint(Number(draft.lat), Number(draft.lng)) ? Number(draft.lng) : -71.06,
   ];
   const selected =
     draft.lat !== "" &&
@@ -532,26 +488,36 @@ function ReportPage({ session }: { session: Session | null }) {
     validPoint(Number(draft.lat), Number(draft.lng));
   async function locate() {
     E("");
-    B(true);
+    locationAsked.current = true;
+    const request = ++locationRequest.current;
+    setLocating(true);
+    setLocationAccuracy(null);
     navigator.geolocation
       ? navigator.geolocation.getCurrentPosition(
           (p) => {
-            update({
+            if (request !== locationRequest.current) return;
+            D(d => ({ ...d,
               lat: String(p.coords.latitude),
               lng: String(p.coords.longitude),
               confirmed: false,
-            });
-            B(false);
+            }));
+            setLocationAccuracy(p.coords.accuracy);
+            setLocating(false);
           },
-          () => {
+          (error) => {
+            if (request !== locationRequest.current) return;
             E(
-              "Location permission was declined or unavailable. Search an address or enter coordinates below.",
+              error.code === 1
+                ? "Location access is blocked. Allow location for this site in your browser settings, then tap Use my location. You can also enter coordinates below."
+                : error.code === 3
+                  ? "Your device took too long to find its location. Try again outdoors or enter coordinates below."
+                  : "Your device could not determine its location. Turn on device location services and try again, or enter coordinates below.",
             );
-            B(false);
+            setLocating(false);
           },
-          { enableHighAccuracy: true, timeout: 10000 },
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
         )
-      : (E("Geolocation unavailable. Use manual location."), B(false));
+      : (E("Device location is unavailable in this browser. Enter coordinates below."), setLocating(false));
   }
   async function submit() {
     B(true);
@@ -730,13 +696,13 @@ function ReportPage({ session }: { session: Session | null }) {
             <div className="actions">
               <button
                 className={emergency === true ? "button" : "secondary"}
-                onClick={() => H(true)}
+                onClick={() => { H(true); ++locationRequest.current; setLocating(false); }}
               >
                 Yes / unsure
               </button>
               <button
                 className={emergency === false ? "button" : "secondary"}
-                onClick={() => H(false)}
+                onClick={() => { H(false); if (!selected && !locationAsked.current) void locate(); }}
               >
                 No immediate emergency
               </button>
@@ -749,9 +715,18 @@ function ReportPage({ session }: { session: Session | null }) {
             </div>
           ) : (
             <>
-              <button className="secondary" onClick={locate} disabled={busy}>
-                ⌖ Use my location
-              </button>
+              <div className="device-location-card">
+                <strong>Start with your current location</strong>
+                <p>Allow location access when your browser asks. We use your device’s location to position the issue pin.</p>
+                <button className="button" onClick={locate} disabled={busy || locating}>
+                  {locating ? "Finding your location…" : "⌖ Use my location"}
+                </button>
+                <p role="status" aria-live="polite">
+                  {locating ? "Waiting for location permission and a fresh GPS reading…" : locationAccuracy !== null
+                    ? `Device location received · estimated accuracy within ${Math.round(locationAccuracy)} meters. ${locationAccuracy > 100 ? "This reading is approximate. Try again or adjust the pin before confirming." : "Check the pin before confirming the issue location."}`
+                    : "You can adjust the pin or enter coordinates instead."}
+                </p>
+              </div>
               <form
                 className="address-search"
                 onSubmit={async (e) => {
@@ -798,7 +773,7 @@ function ReportPage({ session }: { session: Session | null }) {
                   {r.label}
                 </button>
               ))}
-              <PinMap
+              <GoogleReportMap
                 point={point}
                 onChange={(p) =>
                   update({
@@ -1433,7 +1408,7 @@ const policies: Record<string, { title: string; paragraphs: string[] }> = {
     paragraphs: [
       "Your original photo, precise issue pin, private note and receipt token are not public records in Common’s public API. Reviewed public records may use generalized location and separately approved media.",
       "Unsent drafts, including photos, are stored on your device using IndexedDB so sign-in does not lose your work. Use Discard draft on the report page to remove them. Shared devices may retain drafts until discarded.",
-      "Guest receipt links are bearer credentials. Keep them private; claiming a report with an authenticated account revokes guest access. There is no third-party analytics or advertising in this application. OpenStreetMap receives tile requests when the report map is loaded.",
+      "Guest receipt links are bearer credentials. Keep them private; claiming a report with an authenticated account revokes guest access. There is no third-party analytics or advertising in this application. Google Maps receives map requests and the displayed map location when the Quick Report map is loaded. OpenStreetMap receives tile requests on city issue maps.",
       "Private/rejected submissions are scheduled for retention review at 90 days. Automated deletion and a staffed privacy contact must be configured before public launch; expiration alone is not deletion. Do not submit sensitive personal data.",
     ],
   },
@@ -1458,7 +1433,7 @@ const policies: Record<string, { title: string; paragraphs: string[] }> = {
     title: "A public record for everyone.",
     paragraphs: [
       "Common targets WCAG 2.2 AA. Location search supports keyboard navigation; issue coordinates can be edited without dragging the map, and photo selection supports camera or library.",
-      "Geolocation is optional and requested only when you choose Use my location. Manual address search and coordinate entry remain available.",
+      "Geolocation is optional. Quick Report requests device location after you choose No immediate emergency, or when you choose Use my location. Manual address search and coordinate entry remain available.",
       "Automated checks do not replace testing with assistive technology. iOS VoiceOver, Android TalkBack and full WCAG 2.2 AA review remain required before launch.",
     ],
   },
