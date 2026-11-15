@@ -1106,3 +1106,15 @@ footer > small {
  .report-flow .report-next { bottom:6px; }
 }
 @media(max-width:360px) { .report-flow .google-report-map { height:145px; } .report-flow .report-map-help { font-size:10px; } .report-flow .progress { margin-bottom:10px; } .report-flow .report-map-card { margin:6px 0; } }
+
+.account-entry { max-width:1050px; }
+.account-entry > p { max-width:720px; }
+.account-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin:32px 0; }
+.account-options article { padding:30px; border:1px solid #dfe4ed; border-radius:14px; background:white; display:flex; flex-direction:column; align-items:start; }
+.account-options h2 { font-size:28px; margin:16px 0 0; }
+.account-options p { flex:1; color:#657185; }
+.account-options small { color:#657185; margin-top:12px; }
+.account-town-form { max-width:520px; }
+@media(max-width:650px) { .account-options { grid-template-columns:1fr; gap:16px; } .account-options article { padding:23px; } }
+
+@media(max-width:700px) { header { flex-wrap:wrap; gap:14px; } header nav { width:100%; justify-content:space-between; } }

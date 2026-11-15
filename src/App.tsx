@@ -1,8 +1,10 @@
+import AccountEntry from "./AccountEntry";
 import ApprovedHome from "./ApprovedHome";
 import CityMap from "./CityMap";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -1545,9 +1547,10 @@ export default function App() {
           <Link className="nav-method" to="/methodology">
             How it works
           </Link>
+          <Link to="/my-reports">My Reports</Link>
+          {!session && <Link to="/auth">Log in</Link>}
           {session && (
             <>
-              <Link to="/my-reports">My reports</Link>
               <button
                 className="inline-button"
                 onClick={() => supabase.auth.signOut()}
@@ -1570,14 +1573,15 @@ export default function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/places/:slug" element={<PlacePage />} />
             <Route path="/report" element={<ReportPage session={session} />} />
-            <Route path="/auth" element={<AuthPage session={session} />} />
+            <Route path="/auth" element={session ? <Navigate to="/my-reports" replace /> : <AccountEntry />} />
+            <Route path="/auth/member" element={<AuthPage session={session} />} />
             <Route
               path="/auth/callback"
               element={<AuthPage session={session} />}
             />
             <Route
               path="/my-reports"
-              element={<MyReports session={session} />}
+              element={session ? <MyReports session={session} /> : <Navigate to="/auth" replace />}
             />
             <Route path="/my-reports/:id" element={<TrackPage owner />} />
             <Route path="/track/:id/:token" element={<TrackPage />} />
@@ -1646,7 +1650,7 @@ export default function App() {
         </small>
       </footer>
       )}
-      {route.pathname !== "/" && !route.pathname.startsWith("/report") && (
+      {route.pathname !== "/" && !route.pathname.startsWith("/report") && !route.pathname.startsWith("/auth") && (
         <Link className="mobile-report button" to="/report">
           Quick Report ↗
         </Link>

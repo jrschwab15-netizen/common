@@ -16,32 +16,11 @@ type PlaceResult = {
   matched_alias?: string | null;
 };
 
-type Example = {
-  id: number;
-  name: string;
-  location: string;
-  age: number;
-  category: string;
-  count: number;
-  status: string;
-  scene: string;
-};
-
-const examples: Omit<Example, "scene">[] = [
-  { id: 1, name: "Overflowing public trash bin", location: "Example · Public sidewalk", age: 18, category: "trash", count: 7, status: "Still open" },
-  { id: 2, name: "Pothole in travel lane", location: "Example · Public road", age: 11, category: "road", count: 4, status: "Still open" },
-  { id: 3, name: "Graffiti on public wall", location: "Example · Public park", age: 6, category: "graffiti", count: 3, status: "Still open" },
-  { id: 4, name: "Trash cleared from public path", location: "Example · Public trail", age: 4, category: "fixed", count: 2, status: "Verified fixed" },
+const examples = [
+ { name:"Overflowing public trash bin", location:"Hamburg · Street-side bin", age:18, count:7, category:"waiting", status:"Awaiting response", response:"No response yet", detail:"The issue stays visible while the community waits for an update.", photo:"hamburg-bin", credit:"Alexander Marks · 2005 · Public domain", source:"https://commons.wikimedia.org/wiki/File:Overflowing_Hamburg_street_garbage_bin.jpg" },
+ { name:"Overflowing public trash bin", location:"Helsinki · Public waste container", age:11, count:4, category:"acknowledged", status:"Acknowledged", response:"Acknowledged · Cleanup planned", detail:"Town response: “We have received the reports and will arrange a cleanup.”", photo:"helsinki-bin", credit:"Ilkka Jukarainen · 2019 · CC BY-SA 2.0", source:"https://commons.wikimedia.org/wiki/File:Overflowing_garbage_bin_in_Helsinki,_Finland,_2019.jpg" },
+ { name:"Overflowing public trash bin", location:"New Zealand · Sports grounds", age:6, count:3, category:"scheduled", status:"Cleanup scheduled", response:"Crew assigned · Next visit scheduled", detail:"Agency response: “A crew is assigned. We will post an update after collection.”", photo:"stadium-bin", credit:"Marshelec · 2021 · CC BY-SA 4.0", source:"https://commons.wikimedia.org/wiki/File:Overflowing_rubbish_bin_at_sports_stadium.jpg" },
 ];
-
-function fromPrototypeScripts(doc: Document, name: string): string {
-  // These SVG literals belong to the approved, static prototype. Never parse
-  // or run arbitrary fetched JavaScript and never use dynamic community content.
-  const scripts = Array.from(doc.querySelectorAll("script"));
-  const code = scripts.map((s) => s.textContent || "").join("\n");
-  const match = code.match(new RegExp(`const ${name}=\\x60([\\s\\S]*?)\\x60;`));
-  return match?.[1]?.startsWith("<svg ") ? match[1] : "";
-}
 
 export default function ApprovedHome() {
   const host = useRef<HTMLDivElement | null>(null);
@@ -66,12 +45,6 @@ export default function ApprovedHome() {
         const style = Array.from(doc.querySelectorAll("style"))
           .map((node) => node.textContent || "")
           .join("\n");
-        const scenes = {
-          trash: fromPrototypeScripts(doc, "trash"),
-          road: fromPrototypeScripts(doc, "pothole"),
-          graffiti: fromPrototypeScripts(doc, "graffiti"),
-          fixed: fromPrototypeScripts(doc, "clean"),
-        };
         // Remove browser-demo authentication, simulated votes, modal scripts,
         // inline handlers and any external script before inserting markup.
         doc.querySelectorAll("script, .overlay").forEach((node) => node.remove());
@@ -93,7 +66,20 @@ export default function ApprovedHome() {
           .hero-art.common-map-hero { aspect-ratio:1; height:auto; min-height:0; background:none; box-shadow:none; overflow:visible; }
           .common-map-hero img { display:block; width:100%; height:auto; border-radius:12px; }
           .example-disclaimer { font-size:12px; color:#657185; padding:4px 0 19px; }
-          .issue { cursor:default; }
+          .issue { cursor:default; display:flex; flex-direction:column; }
+          .issue .scene img { width:100%; height:100%; object-fit:cover; }
+          .issue .issue-body { flex:1; }
+          .issue .issue-footer { gap:16px; align-items:start; }
+          .issue .issue-footer b,.issue .issue-footer span { display:block; }
+          .issue-response { padding:14px; margin-top:18px; background:#edf3ff; border-radius:7px; }
+          .issue-response small { display:block; color:#657185; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+          .issue-response strong { display:block; margin:5px 0; font-size:14px; }
+          .issue-response p { font-size:12px; margin:0; color:#52647c; }
+          .issue-photo-credit { font-size:10px; padding:5px 12px; color:#657185; }
+          .top .nav { gap:18px; }
+          .top .nav-reports,.top .account-login { background:none; border:0; color:#172235; font:650 13px Arial,sans-serif; padding:9px 0; white-space:nowrap; }
+          @media(max-width:1100px) { .top-inner { height:auto; min-height:82px; flex-wrap:wrap; gap:12px; padding-top:12px; padding-bottom:12px; } .top .nav { flex-wrap:wrap; gap:14px; } }
+          @media(max-width:600px) { .top .nav { width:100%; justify-content:space-between; } .top .nav-reports,.top .account-login { font-size:12px; } .top .nav .account-login { display:inline-flex; } }
           .issue:hover { transform:none; box-shadow:none; }
           .place-matches[role="status"]:empty { display:none; }
           .report-photo-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
@@ -189,6 +175,7 @@ export default function ApprovedHome() {
           }
           if (action instanceof HTMLAnchorElement) {
             const href = action.getAttribute("href") || "";
+            if (href.startsWith("#/")) { event.preventDefault(); navigate(href.slice(1)); return; }
             if (href.startsWith("#")) {
               event.preventDefault();
               if (href === "#issues" && action.closest(".overlay-card")) {
@@ -318,8 +305,7 @@ export default function ApprovedHome() {
           if (hint) hint.textContent = "Search all 351 Massachusetts municipalities and supported community aliases.";
         }
 
-        // Render the same approved illustrative SVG cards, but make the example
-        // status unmistakable and never pretend these are live issue records.
+        // Pair licensed historical photos with clearly labeled example histories.
         const cards = root.querySelector<HTMLElement>("#cards");
         const filterButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-filter]"));
         let activeFilter = "all";
@@ -332,8 +318,11 @@ export default function ApprovedHome() {
             article.className = "issue";
             const scene = document.createElement("div");
             scene.className = "scene";
-            // Scene SVG comes only from our versioned, approved static HTML.
-            scene.innerHTML = scenes[item.category as keyof typeof scenes] || "";
+            const image = document.createElement("img");
+            image.src = import.meta.env.BASE_URL + "photos/" + item.photo + ".webp";
+            image.alt = "Real photograph of an overflowing trash bin: " + item.location;
+            image.loading = "lazy";
+            scene.append(image);
             const label = document.createElement("div");
             label.className = "scene-label";
             label.textContent = `${item.status.toUpperCase()} · EXAMPLE`;
@@ -342,7 +331,7 @@ export default function ApprovedHome() {
             body.className = "issue-body";
             const meta = document.createElement("div");
             meta.className = "issue-meta";
-            meta.textContent = `${item.location} · ${item.count} example reports`;
+            meta.textContent = item.location;
             const title = document.createElement("h3");
             title.textContent = item.name;
             const footer = document.createElement("div");
@@ -351,11 +340,20 @@ export default function ApprovedHome() {
             const ageValue = document.createElement("b");
             ageValue.textContent = `${item.age} days`;
             const descriptor = document.createElement("span");
-            descriptor.textContent = item.category === "fixed" ? " to verify" : " since first report";
+            descriptor.textContent = "since first report";
             age.append(ageValue, descriptor);
-            footer.append(age);
-            body.append(meta, title, footer);
-            article.append(scene, body);
+            const count = document.createElement("div");
+            const countValue = document.createElement("b"); countValue.textContent = String(item.count);
+            const countLabel = document.createElement("span"); countLabel.textContent = "reports since first report";
+            count.append(countValue, countLabel); footer.append(age, count);
+            const response = document.createElement("div"); response.className = "issue-response";
+            const responseLabel = document.createElement("small"); responseLabel.textContent = "Town / agency response · Example";
+            const responseTitle = document.createElement("strong"); responseTitle.textContent = item.response;
+            const detail = document.createElement("p"); detail.textContent = item.detail;
+            response.append(responseLabel, responseTitle, detail);
+            const credit = document.createElement("a"); credit.className = "issue-photo-credit"; credit.href = item.source; credit.textContent = "Photo: " + item.credit + " · Cropped";
+            body.append(meta, title, footer, response);
+            article.append(scene, credit, body);
             cards.append(article);
           });
           if (!filtered.length) {
@@ -367,7 +365,7 @@ export default function ApprovedHome() {
         if (cards) {
           const disclosure = document.createElement("div");
           disclosure.className = "example-disclaimer";
-          disclosure.textContent = "Illustrative example reports only. They are not live municipal records.";
+          disclosure.textContent = "Illustrative example reports only. Real historical photos; report counts, ages, and town responses are examples, not live municipal records.";
           cards.parentNode?.insertBefore(disclosure, cards);
           displayCards();
         }
@@ -383,7 +381,9 @@ export default function ApprovedHome() {
         });
         const myReports = root.getElementById("myReportsNav");
         const updateReports = (loggedIn: boolean) => {
-          if (myReports) myReports.hidden = !loggedIn;
+          if (myReports) myReports.hidden = false;
+          const login = root.getElementById("accountLoginNav");
+          if (login) { login.textContent = loggedIn ? "Your account" : "Log in"; login.setAttribute("href", loggedIn ? "#/my-reports" : "#/auth"); }
         };
         void supabase.auth.getUser().then(({ data }) => {
           if (!cancelled) updateReports(Boolean(data.user));
