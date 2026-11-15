@@ -1,5 +1,13 @@
 import {test,expect} from '@playwright/test';
 test('city map shows published locations, synchronized filters, and concentrations',async({page},info)=>{
+ await page.addInitScript(()=>{
+  class Bounds {south=90;north=-90;west=180;east=-180;extend(p:{lat:number;lng:number}){this.south=Math.min(this.south,p.lat);this.north=Math.max(this.north,p.lat);this.west=Math.min(this.west,p.lng);this.east=Math.max(this.east,p.lng);return this;}contains(p:{lat:number;lng:number}){return p.lat>=this.south&&p.lat<=this.north&&p.lng>=this.west&&p.lng<=this.east;}isEmpty(){return this.south===90;}}
+  class MapMock {bounds=new Bounds();pane:HTMLElement;listeners=new Map<string,()=>void>();data={addGeoJson(){},setStyle(){}};constructor(element:HTMLElement){this.pane=document.createElement('div');element.append(this.pane);}fitBounds(b:Bounds){this.bounds=b;this.listeners.get('idle')?.();}getBounds(){return this.bounds;}panTo(p:{lat:number;lng:number}){this.bounds=new Bounds().extend({lat:p.lat-.003,lng:p.lng-.003}).extend({lat:p.lat+.003,lng:p.lng+.003});this.listeners.get('idle')?.();}setZoom(){}addListener(n:string,f:()=>void){this.listeners.set(n,f);return{remove:()=>this.listeners.delete(n)};}}
+  class Overlay{map:MapMock|null=null;onAdd=()=>{};draw=()=>{};onRemove=()=>{};setMap(m:MapMock|null){this.map=m;if(m){this.onAdd();this.draw();}else this.onRemove();}getPanes(){return{overlayMouseTarget:this.map!.pane};}getProjection(){return{fromLatLngToDivPixel:()=>({x:150,y:200})};}}
+  class LatLng{constructor(public lat:number,public lng:number){}}
+  class Circle{setMap(){}}
+  Object.assign(window,{google:{maps:{Map:MapMock,LatLngBounds:Bounds,OverlayView:Overlay,LatLng,Circle,importLibrary:async()=>({})}}});
+ });
  const point=(lng:number,lat:number)=>({type:'Point',coordinates:[lng,lat]});
  const rows=[
  {id:'1',public_id:'case-1',title:'Broken sidewalk',category:'Sidewalk obstruction',public_point:point(-71.11,42.37),maintenance_status:'open'},
@@ -28,10 +36,10 @@ test('city map shows published locations, synchronized filters, and concentratio
  await expect(page.locator('.category-counts')).toContainText('Sidewalk obstruction');
  await expect(page.locator('.category-counts')).not.toContainText('Litter');
  await page.locator('.city-issue-pin').click();
- await expect(page.locator('.leaflet-popup-content')).toContainText('Broken sidewalk');
+ await expect(page.locator('.city-selected-case')).toContainText('Broken sidewalk');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('city-map.png'),fullPage:true});
- await page.locator('.leaflet-popup-content').getByRole('button',{name:'Broken sidewalk'}).click();
+ await page.locator('.city-selected-case').getByRole('button',{name:'View report'}).click();
  await expect(page).toHaveURL(/issues\/case-1/);
 });
 

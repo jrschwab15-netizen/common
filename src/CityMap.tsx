@@ -1,78 +1,56 @@
-import {useEffect,useRef,useState} from 'react';
-import L from 'leaflet';
-
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {categoryCounts,publicPoint,reportAreas,type MapIssue} from './map-data';
+import {loadGoogleMaps,commonMapStyles,type CityBounds,type CityGoogleMap,type CityMapsAPI} from './google-maps';
 
-export default function CityMap({name,boundary,issues}:{name:string;boundary:unknown;issues:MapIssue[]}) {
- const root=useRef<HTMLDivElement>(null), map=useRef<L.Map|null>(null), layer=useRef<L.LayerGroup|null>(null);
- const cityBounds=useRef<L.LatLngBounds|null>(null);
- const [bounds,setBounds]=useState<L.LatLngBounds|null>(null), [density,setDensity]=useState(false), [tilesFailed,setTilesFailed]=useState(false);
+function boundaryPoints(value:unknown):{lat:number;lng:number}[]{
+ const result:{lat:number;lng:number}[]=[];
+ const walk=(v:unknown)=>{if(!v||typeof v!=='object')return;if(Array.isArray(v)){if(v.length>=2&&typeof v[0]==='number'&&typeof v[1]==='number')result.push({lng:v[0],lat:v[1]});else v.forEach(walk);}else{const o=v as Record<string,unknown>;if(o.coordinates)walk(o.coordinates);if(o.geometry)walk(o.geometry);if(o.features)walk(o.features);}};walk(value);return result;
+}
+export default function CityMap({name,boundary,issues}:{name:string;boundary:unknown;issues:MapIssue[]}){
+ const root=useRef<HTMLDivElement>(null),map=useRef<CityGoogleMap|null>(null),api=useRef<CityMapsAPI|null>(null),cityBounds=useRef<CityBounds|null>(null);
+ const [ready,setReady]=useState(false),[failed,setFailed]=useState(false),[bounds,setBounds]=useState<CityBounds|null>(null),[density,setDensity]=useState(false),[selected,setSelected]=useState<MapIssue[]|null>(null);
  const navigate=useNavigate();
+ const mapped=useMemo(()=>issues.filter(i=>publicPoint(i.public_point)),[issues]);
+ const visible=mapped.filter(i=>!bounds||bounds.contains({lat:publicPoint(i.public_point)![0],lng:publicPoint(i.public_point)![1]}));
+ const counts=categoryCounts(visible),areas=reportAreas(visible);
  useEffect(()=>{
-  if(!root.current)return;
-  const instance=L.map(root.current,{scrollWheelZoom:false,zoomAnimation:false}).setView([42.2,-71.8],8);
-  map.current=instance;
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).on('tileerror',()=>setTilesFailed(true)).addTo(instance);
-  layer.current=L.layerGroup().addTo(instance);
-  const update=()=>setBounds(instance.getBounds());instance.on('moveend',update);
-  const observer=new ResizeObserver(()=>instance.invalidateSize());observer.observe(root.current);
-  return ()=>{observer.disconnect();instance.remove();map.current=null;layer.current=null;};
- },[]);
+  let cancelled=false;const listeners:{remove:()=>void}[]=[];
+  setReady(false);setFailed(false);setSelected(null);
+  const failure=()=>{if(!cancelled)setFailed(true);};window.gm_authFailure=failure;
+  void(async()=>{try{const loaded=await loadGoogleMaps();await loaded.importLibrary('maps');if(cancelled||!root.current)return;
+   const g=loaded as unknown as CityMapsAPI;api.current=g;
+   const points=boundaryPoints(boundary),extent=new g.LatLngBounds();points.forEach(p=>extent.extend(p));
+   const instance=new g.Map(root.current,{center:points[0]||{lat:42.36,lng:-71.06},zoom:13,styles:commonMapStyles,mapTypeId:'roadmap',mapTypeControl:false,streetViewControl:false,fullscreenControl:true,gestureHandling:'cooperative',clickableIcons:false});map.current=instance;
+   if(!extent.isEmpty()){cityBounds.current=extent;instance.fitBounds(extent,32);}else{await loaded.importLibrary('geocoding');const result=await new g.Geocoder().geocode({address:name+', Massachusetts, USA'});if(cancelled)return;const viewport=result.results[0]?.geometry.viewport;if(viewport){cityBounds.current=viewport;instance.fitBounds(viewport,24);}}
+   if(boundary){try{instance.data.addGeoJson(boundary);instance.data.setStyle({strokeColor:'#205bd6',strokeWeight:2,fillOpacity:.025,clickable:false});}catch{/* Reports stay visible if the boundary is unavailable. */}}
+   listeners.push(instance.addListener('idle',()=>{if(!cancelled)setBounds(instance.getBounds()||null);}));setBounds(instance.getBounds()||null);setReady(true);
+  }catch{if(!cancelled)setFailed(true);}})();
+  return()=>{cancelled=true;listeners.forEach(l=>l.remove());map.current=null;api.current=null;cityBounds.current=null;if(window.gm_authFailure===failure)delete window.gm_authFailure;};
+ },[name,boundary]);
  useEffect(()=>{
-  const instance=map.current;if(!instance)return;
-  let outline:L.GeoJSON|undefined;cityBounds.current=null;
-  if(boundary && typeof boundary==='object') {
-   try {outline=L.geoJSON(boundary as Parameters<typeof L.geoJSON>[0],{style:{color:'#205bd6',weight:2,fillOpacity:.035},interactive:false}).addTo(instance);
-    const extent=outline.getBounds();if(extent.isValid()){cityBounds.current=extent;instance.fitBounds(extent,{padding:[20,20]});}
-   }catch{ /* A missing boundary does not hide published issue locations. */ }
-  }
-  setBounds(instance.getBounds());
-  return ()=>{outline?.remove();};
- },[boundary]);
- const mapped=issues.filter(issue=>publicPoint(issue.public_point));
- const visible=mapped.filter(issue=>!bounds||bounds.contains(publicPoint(issue.public_point)!));
- const counts=categoryCounts(visible), areas=reportAreas(visible);
- useEffect(()=>{
-  const instance=map.current, group=layer.current;if(!instance||!group)return;group.clearLayers();
-  const popup=(items:MapIssue[])=>{
-   const container=document.createElement('div');container.className='city-map-popup';
-   for(const issue of items){const button=document.createElement('button');button.type='button';button.textContent=issue.title;button.addEventListener('click',()=>navigate(`/issues/${issue.public_id}`));
-    const detail=document.createElement('p');detail.textContent=`${issue.category} · ${issue.maintenance_status.replaceAll('_',' ')} · ${issue.public_location}`;container.append(button,detail);}
-   return container;
-  };
-  if(density){for(const area of reportAreas(mapped)){
-   L.circle([area.lat,area.lng],{radius:180,color:area.open?'#c35426':'#287961',fillOpacity:Math.min(.65,.16+area.count*.06),weight:2})
-    .bindTooltip(`${area.count} published cases · ${area.open} open`).bindPopup(popup(area.issues),{maxWidth:Math.max(140,Math.min(280,(root.current?.clientWidth||320)-70))}).addTo(group);
-  }}else{
-   // One keyboard-focusable marker per location, with every co-located case in its popup.
-   const locations=new Map<string,MapIssue[]>();for(const issue of mapped){const key=publicPoint(issue.public_point)!.join(',');locations.set(key,[...(locations.get(key)||[]),issue]);}
-   for(const items of locations.values()){
-    const open=items.some(i=>i.maintenance_status!=='verified_fixed');
-    const icon=L.divIcon({className:`city-issue-pin common-city-pin ${open?'is-open':'is-fixed'}`,html:`<img src="${import.meta.env.BASE_URL}brand/common-map-pin.png" alt="" /><span class="pin-status" aria-hidden="true"></span>${items.length>1?`<span class="pin-count">${items.length}</span>`:''}`,iconSize:[40,54],iconAnchor:[20,54],popupAnchor:[0,-48]});
-    const marker=L.marker(publicPoint(items[0].public_point)!,{icon,title:items.map(i=>i.title).join('; '),alt:`${items.length} published case${items.length===1?'':'s'}: ${items[0].title}`}).bindPopup(popup(items),{maxWidth:Math.max(140,Math.min(280,(root.current?.clientWidth||320)-70))}).addTo(group);
-    marker.getElement()?.setAttribute("aria-label",items.map(i=>i.title).join("; "));
+  const g=api.current,instance=map.current;if(!ready||!g||!instance)return;setSelected(null);const cleanup:(()=>void)[]=[];
+  if(density){for(const area of reportAreas(mapped)){const circle=new g.Circle({map:instance,center:{lat:area.lat,lng:area.lng},radius:180,strokeColor:'#e87951',strokeWeight:2,fillColor:'#e87951',fillOpacity:Math.min(.6,.15+area.count*.06)});cleanup.push(()=>circle.setMap(null));}}
+  else{const groups=new Map<string,MapIssue[]>();for(const issue of mapped){const key=publicPoint(issue.public_point)!.join(',');groups.set(key,[...(groups.get(key)||[]),issue]);}
+   for(const items of groups.values()){
+    const [lat,lng]=publicPoint(items[0].public_point)!;const button=document.createElement('button');button.type='button';button.className='city-issue-pin common-city-pin';button.setAttribute('aria-label',items.map(i=>i.title).join('; '));
+    const image=document.createElement('img');image.src=import.meta.env.BASE_URL+'brand/common-map-pin.png';image.alt='';button.append(image);if(items.length>1){const count=document.createElement('span');count.className='pin-count';count.textContent=String(items.length);button.append(count);}button.onclick=()=>setSelected(items);
+    const overlay=new g.OverlayView();overlay.onAdd=()=>overlay.getPanes()?.overlayMouseTarget.append(button);overlay.draw=()=>{const p=overlay.getProjection().fromLatLngToDivPixel(new g.LatLng(lat,lng));if(p){button.style.left=p.x+'px';button.style.top=p.y+'px';}};overlay.onRemove=()=>button.remove();overlay.setMap(instance);cleanup.push(()=>overlay.setMap(null));
    }
-  }
- },[issues,density,navigate]);
- const fitReports=()=>{if(mapped.length)map.current?.fitBounds(L.latLngBounds(mapped.map(i=>publicPoint(i.public_point)!)),{padding:[35,35],maxZoom:16});};
- return <section className="city-explorer" aria-labelledby="city-map-title">
-  <div className="section-head"><div><div className="eyebrow">EXPLORE REPORTED CONDITIONS</div><h2 id="city-map-title">{name} issue map</h2></div></div>
-  <p>Zoom in, tap a marker, or explore areas with more published cases. Category and status filters apply to the map and list.</p>
-  <div className="map-toolbar"><button className="secondary" onClick={()=>{if(cityBounds.current)map.current?.fitBounds(cityBounds.current,{padding:[20,20]});}}>Fit city</button><button className="secondary" disabled={!mapped.length} onClick={fitReports}>Fit reports</button><button className="secondary" aria-pressed={density} onClick={()=>setDensity(!density)}>Report concentrations</button></div>
-  <div className="city-map-layout"><div><div ref={root} className="city-issue-map" role="region" aria-label={`${name} published issue map`} />
-  <p className="map-legend"><span>🟠 Open / reopened</span><span>🟢 Verified fixed</span><span>Blue outline: city boundary</span></p>
+  }return()=>cleanup.forEach(f=>f());
+ },[ready,mapped,density]);
+ const zoomTo=(lat:number,lng:number)=>{map.current?.panTo({lat,lng});map.current?.setZoom(16);root.current?.scrollIntoView({block:'center',behavior:'smooth'});};
+ return <section className="city-explorer common-city-explorer" aria-labelledby="city-map-title">
+  <div className="city-map-intro"><div><div className="eyebrow">YOUR REPORTING AREA</div><h2 id="city-map-title">{name} issue map</h2><p>One place to see reported conditions, follow responses, and find what still needs attention.</p></div><span className="google-map-label">Google Maps</span></div>
+  <div className="map-toolbar"><button className="secondary" onClick={()=>{if(cityBounds.current)map.current?.fitBounds(cityBounds.current,32);}}>Fit city</button><button className="secondary" disabled={!mapped.length||!ready} onClick={()=>{const g=api.current;if(!g)return;const extent=new g.LatLngBounds();mapped.forEach(i=>{const p=publicPoint(i.public_point)!;extent.extend({lat:p[0],lng:p[1]});});map.current?.fitBounds(extent,45);}}>Fit reports</button><button className="secondary" aria-pressed={density} onClick={()=>setDensity(!density)}>Report concentrations</button></div>
+  <div className="city-map-stage"><div ref={root} className="city-issue-map" role="region" aria-label={`${name} published issue map`} hidden={failed}/>
+   {!ready&&!failed&&<p role="status">Loading Google Maps…</p>}
+   {failed&&<div className="notice" role="status">Google Maps could not load. Your city summary and public reports remain available below.</div>}
+   {selected&&<div className="city-selected-case"><button className="case-close" aria-label="Close map report" onClick={()=>setSelected(null)}>×</button>{selected.map(i=><div key={i.id}><small>{i.category} · {i.maintenance_status.replaceAll('_',' ')}</small><h3>{i.title}</h3><p>{i.public_location}</p><strong>{Math.max(0,Math.floor((Date.now()-Date.parse(i.first_reported_at))/86400000))} days since first report</strong><button className="button small" onClick={()=>navigate('/issues/'+i.public_id)}>View report →</button></div>)}</div>}
+  </div>
   <p className="muted" aria-live="polite">{mapped.length} mapped cases · {issues.length-mapped.length} without a reviewed public location · {visible.length} in this view</p>
-  {tilesFailed&&<p role="status">Some map tiles could not load. Markers and the report list remain available.</p>}
-  {!mapped.length&&<p className="notice">No published locations match these filters. The city map is ready for reviewed reports.</p>}</div>
-  <aside className="map-insights" aria-label="Reports in the map view"><h3>In this map view</h3><p className="muted">Summaries update as you pan and zoom.</p>
-   <h4>Most common issues</h4>{counts.length?<ol className="category-counts">{counts.map(([category,count])=><li key={category}><span>{category}</span><strong>{count}</strong><meter min="0" max={visible.length} value={count} aria-label={`${category}: ${count} cases`} /></li>)}</ol>:<p>No mapped cases in this view.</p>}
-   <h4>Areas with open cases</h4><p className="muted">Fixed cells about 370 m wide in Massachusetts, ranked by open case count.</p>
-   {areas.filter(a=>a.open>0).slice(0,5).map(area=><button key={`${area.lat}:${area.lng}`} className="map-area" onClick={()=>{const instance=map.current;if(!instance)return;root.current?.scrollIntoView({block:'center'});instance.invalidateSize();instance.setView([area.lat,area.lng],16,{animate:false});setBounds(instance.getBounds());}}><strong>{area.open} open · {area.count} total</strong><span>{categoryCounts(area.issues)[0]?.[0]} · Zoom to area ↗</span></button>)}
-   {!areas.some(a=>a.open>0)&&<p>No mapped open cases in this view.</p>}
-  </aside></div>
-  <small>Published cases only; repeat submissions may join one case. Concentrations reflect reporting activity, not neighborhood quality or a complete survey. Locations may be generalized for privacy. Use the report list below as an alternative to the map.</small>
+  {!mapped.length&&<p className="notice">No published locations match these filters. The city map is ready for reviewed reports.</p>}
+  <div className="city-map-insights" aria-label="Reports in the map view"><div><h3>Most common issues</h3>{counts.length?<ol className="category-counts">{counts.map(([category,count])=><li key={category}><span>{category}</span><strong>{count}</strong><meter min="0" max={visible.length} value={count} aria-label={`${category}: ${count} cases`}/></li>)}</ol>:<p>No mapped cases in this view.</p>}</div><div><h3>Areas with open cases</h3>{areas.filter(a=>a.open>0).slice(0,5).map(area=><button key={`${area.lat}:${area.lng}`} className="map-area" onClick={()=>zoomTo(area.lat,area.lng)}><strong>{area.open} open · {area.count} total</strong><span>{categoryCounts(area.issues)[0]?.[0]} · Zoom to area ↗</span></button>)}{!areas.some(a=>a.open)&&<p>No mapped open cases in this view.</p>}</div></div>
+  <small>Published cases only. Reporting activity is not a neighborhood quality grade or complete survey. Locations may be generalized for privacy. Use the public report list as an alternative.</small>
  </section>;
 }
-
-

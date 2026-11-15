@@ -1,3 +1,4 @@
+import walkthroughStyles from "./report-walkthrough.css?inline";
 /**
  * Approved Common homepage. Visual markup and styling are loaded directly from
  * the user-approved Common v7 prototype, not reinterpreted from a prose brief.
@@ -5,7 +6,8 @@
  * Supabase-backed location RPC, and secure Quick Report route.
  */
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { mountReportWalkthrough } from "./report-walkthrough";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "./lib";
 
 type PlaceResult = {
@@ -25,6 +27,7 @@ const examples = [
 export default function ApprovedHome() {
   const host = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
+  const route = useLocation();
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export default function ApprovedHome() {
     if (!holder) return;
     const root = holder.shadowRoot || holder.attachShadow({ mode: "open" });
     let cancelled = false;
+    let stopAnimation: (()=>void) | undefined;
     let searchTimer: ReturnType<typeof setTimeout> | undefined;
     let authSubscription: { unsubscribe: () => void } | undefined;
 
@@ -63,6 +67,7 @@ export default function ApprovedHome() {
             --line:#dfe4ed; --paper:#f9fafc; --mist:#edf3ff;
             --orange:#e87951; --white:#fff; }
           ${style}
+          ${walkthroughStyles}
           .hero-art.common-map-hero { aspect-ratio:1; height:auto; min-height:0; background:none; box-shadow:none; overflow:visible; }
           .common-map-hero img { display:block; width:100%; height:auto; border-radius:12px; }
           .example-disclaimer { font-size:12px; color:#657185; padding:4px 0 19px; }
@@ -131,6 +136,9 @@ export default function ApprovedHome() {
         const content = document.createElement("div");
         content.className = "common-approved-page";
         content.innerHTML = body;
+        content.querySelector(".top")?.remove();
+        const walkthrough = content.querySelector<HTMLElement>("#quick");
+        if (walkthrough) { content.querySelector(".statement")?.after(walkthrough); stopAnimation = mountReportWalkthrough(walkthrough); }
         content.querySelectorAll(".report-photo-example").forEach(card => {
           const photo = card.querySelector(".report-example-image");
           const portal = card.querySelector(".report-example-ui");
@@ -148,8 +156,11 @@ export default function ApprovedHome() {
           heroArt.replaceChildren(image);
         }
         root.append(css, content);
+        const target = new URLSearchParams(route.search).get("section");
+        if (target) requestAnimationFrame(()=>root.getElementById(target)?.scrollIntoView({block:"start"}));
+        content.querySelectorAll(".footer-row div").forEach(node=>{ if(node.textContent?.includes("Prelaunch beta")) node.textContent=node.textContent.replace("Prelaunch beta","openbeta.net"); });
         const footerCopy = content.querySelector(".footer-row > div:last-child");
-        if (footerCopy) footerCopy.textContent = "Prelaunch beta · Coverage varies by community";
+        if (footerCopy) footerCopy.textContent = "openbeta.net · Coverage varies by community";
 
         const report = () => navigate("/report");
         const scrollTo = (id: string) => {
@@ -399,11 +410,12 @@ export default function ApprovedHome() {
     void render();
     return () => {
       cancelled = true;
+      stopAnimation?.();
       if (searchTimer) clearTimeout(searchTimer);
       authSubscription?.unsubscribe();
       root.replaceChildren();
     };
-  }, [navigate]);
+  }, [navigate, route.search]);
 
   return loadError ? (
     <section role="alert" style={{ padding: "80px 6%" }}>

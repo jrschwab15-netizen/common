@@ -9,7 +9,7 @@ test("home stays public, guest reporting works, and emergency stops photos", asy
   await expect(
     page.getByRole("link", { name: "Sign in", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Quick report ↗", exact: true }).click();
+  await page.getByRole("link", { name: "Quick Report ↗", exact: true }).first().click();
   await expect(
     page.getByRole("button", { name: "Continue as guest" }),
   ).toBeVisible();
@@ -63,7 +63,7 @@ test("directory search uses official live records and keyboard selection", async
   await search.press("ArrowDown");
   await search.press("Enter");
   await expect(page.getByRole("heading", { name: "Cambridge." })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Cambridge published issue map", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cambridge issue map", exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "No Common reports yet" }),
   ).toBeVisible();

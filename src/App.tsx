@@ -38,7 +38,7 @@ function ErrorNotice({ error }: { error: string }) {
     </p>
   ) : null;
 }
-function Search({ initial = "" }: { initial?: string }) {
+function Search({ initial = "", compact = false }: { initial?: string; compact?: boolean }) {
   const [q, Q] = useState(initial),
     [results, R] = useState<Place[]>([]),
     [error, E] = useState(""),
@@ -76,14 +76,14 @@ function Search({ initial = "" }: { initial?: string }) {
   };
   return (
     <form
-      className="search"
+      className={compact ? "search header-city-search" : "search"}
       onSubmit={(e) => {
         e.preventDefault();
         if (active >= 0 && results[active]) choose(results[active]);
         else navigate(`/search?q=${encodeURIComponent(q)}`);
       }}
     >
-      <label htmlFor={uid.current}>Find your community</label>
+      <label htmlFor={uid.current}>{compact ? "Search your city" : "Find your community"}</label>
       <div className="searchbar">
         <span aria-hidden="true">⌕</span>
         <input
@@ -136,13 +136,13 @@ function Search({ initial = "" }: { initial?: string }) {
           ))}
         </ul>
       )}
-      <p className="searchhint" aria-live="polite">
+      {!compact && <p className="searchhint" aria-live="polite">
         {loading
           ? "Searching…"
           : q.length > 1 && results.length === 0
             ? "No matching Massachusetts community. Coverage elsewhere is not yet available."
             : "Massachusetts directory · Coverage varies by community"}
-      </p>
+      </p>}
       <ErrorNotice error={error} />
     </form>
   );
@@ -277,14 +277,15 @@ function PlacePage() {
           information
         </p>
       )}
-      <p>Public spaces. A shared history.</p>
-      <CoveragePanel coverage={p.coverage} />
+      <p>Public spaces. A shared history. See what has been reported, what is still open, and what has been independently verified fixed.</p>
+      <details className="city-coverage-details"><summary>Reporting coverage &amp; data sources</summary><CoveragePanel coverage={p.coverage} />
       <p className="muted">
         MassGIS directory imported{" "}
         {new Date(p.imported_at).toLocaleDateString()}. Boundary source version:{" "}
         {new Date(p.source_version).toLocaleDateString()}. Directory coverage
         does not verify maintenance responsibility.
       </p>
+      </details>
       <div className="metrics">
         <div>
           <strong>{issues.length}</strong>
@@ -832,7 +833,6 @@ function ReportPage({ session }: { session: Session | null }) {
                 </select>
               </label>
               <p className="muted">The responsible agency may be the municipality, a parks department, a transit authority, or an airport operator. Responsibility is reviewed before publication; agency delivery is not yet enabled.</p>
-              </details>
               <label>
                 Public location description (optional)
                 <input
@@ -842,6 +842,7 @@ function ReportPage({ session }: { session: Session | null }) {
                   placeholder="For example: sidewalk beside the library"
                 />
               </label>
+              </details>
               <label className="check">
                 <input
                   type="checkbox"
@@ -1538,33 +1539,17 @@ export default function App() {
       <a className="skip" href="#main">
         Skip to content
       </a>
-      {route.pathname !== "/" && (
-      <header>
-        <Link className="wordmark" to="/" aria-label="Common home">
-          <img src={`${import.meta.env.BASE_URL}brand/common-mark.png`} alt="" />common.
-        </Link>
+      <header className="shared-header">
+        <Link className="wordmark" to="/" aria-label="Common home"><img src={import.meta.env.BASE_URL + "brand/common-mark.png"} alt=""/>common.</Link>
         <nav aria-label="Main navigation">
-          <Link className="nav-method" to="/methodology">
-            How it works
-          </Link>
+          <Link to="/?section=how">How it works</Link>
+          <Link to="/?section=issues">Public reports</Link>
           <Link to="/my-reports">My Reports</Link>
-          {!session && <Link to="/auth">Log in</Link>}
-          {session && (
-            <>
-              <button
-                className="inline-button"
-                onClick={() => supabase.auth.signOut()}
-              >
-                Log out
-              </button>
-            </>
-          )}
-          <Link className="button small" to="/report">
-            Quick Report ↗
-          </Link>
+          <Link className="button small" to="/report">Quick Report ↗</Link>
+          <Search compact />
+          {session ? <button className="inline-button" onClick={()=>supabase.auth.signOut()}>Log out</button> : <Link to="/auth">Log in</Link>}
         </nav>
       </header>
-      )}
       <main id="main">
         <ErrorNotice error={authError} />
         {authReady ? (
@@ -1633,8 +1618,9 @@ export default function App() {
           </Link>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Common · Prelaunch beta</span>
+          <span>© {new Date().getFullYear()} Common · openbeta.net</span>
           <div>
+            <Link to="/?section=towns">For your town</Link>
             {["methodology", "privacy", "terms", "accessibility", "safety"].map(
               (k) => (
                 <Link key={k} to={`/${k}`}>

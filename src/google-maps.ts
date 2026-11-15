@@ -34,3 +34,23 @@ export function loadGoogleMaps():Promise<MapsAPI> {
  });
  return loading;
 }
+// Additional city-map surfaces; the shared loader also serves Quick Report.
+export type CityBounds = { contains:(point:{lat:number;lng:number})=>boolean; extend:(point:{lat:number;lng:number})=>CityBounds; isEmpty:()=>boolean };
+export type CityGoogleMap = GoogleMap & { fitBounds:(bounds:CityBounds,padding?:number)=>void; getBounds:()=>CityBounds|undefined; setZoom:(zoom:number)=>void; data:{addGeoJson:(value:unknown)=>unknown;setStyle:(value:Record<string,unknown>)=>void} };
+export type CityOverlay = {onAdd:()=>void;draw:()=>void;onRemove:()=>void;setMap:(map:CityGoogleMap|null)=>void;getPanes:()=>{overlayMouseTarget:HTMLElement}|null;getProjection:()=>{fromLatLngToDivPixel:(point:unknown)=>{x:number;y:number}|null}};
+export type CityMapsAPI = {
+ Map:new(element:HTMLElement,options:Record<string,unknown>)=>CityGoogleMap;
+ LatLngBounds:new()=>CityBounds;
+ LatLng:new(lat:number,lng:number)=>unknown;
+ OverlayView:new()=>CityOverlay;
+ Circle:new(options:Record<string,unknown>)=>{setMap:(map:CityGoogleMap|null)=>void};
+ Geocoder:new()=>{geocode:(request:{address:string})=>Promise<{results:{geometry:{viewport:CityBounds}}[]}>};
+};
+export const commonMapStyles = [
+ {featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]},
+ {featureType:'transit',elementType:'labels',stylers:[{visibility:'off'}]},
+ {featureType:'water',elementType:'geometry',stylers:[{color:'#a9dce7'}]},
+ {featureType:'landscape',elementType:'geometry',stylers:[{color:'#f0f2eb'}]},
+ {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#dce8d3'}]},
+ {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},
+];

@@ -11,7 +11,7 @@ test('public record uses real photos and clearly separates example response stag
 });
 test('My Reports sends guests to account choices and town access stays frontend only',async({page},info)=>{
  await page.setViewportSize({width:320,height:700});
- await page.goto('/');await page.getByRole('button',{name:'My Reports',exact:true}).click();
+ await page.goto('/');await page.getByRole('link',{name:'My Reports',exact:true}).click();
  await expect(page).toHaveURL(/#\/auth$/);
  await expect(page.getByRole('heading',{name:'Community member',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
