@@ -9,10 +9,12 @@ for(const [width,height]of [[390,844],[320,700]])test(`main report action fits $
  await expect(page.locator('footer')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath('compact-location.png')});
- await page.getByRole('textbox',{name:'Public location description'}).fill('Public sidewalk beside the library');await page.getByRole('checkbox').check();await next.click();
+ await expect(page.getByRole('textbox',{name:'Public location description'})).toBeEmpty();await expect(next).toBeDisabled();await page.getByRole('checkbox').check();await expect(next).toBeEnabled();await next.click();
  await expect(page.getByRole('heading',{name:'Show what you see.'})).toBeVisible();
  await page.locator('input[type=file]').first().setInputFiles('public/brand/common-mark.png');
  await page.getByRole('button',{name:'Continue →',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Anything to add?'})).toBeVisible();
  const review=await page.getByRole('button',{name:'Review report'}).boundingBox();expect(review!.y+review!.height).toBeLessThanOrEqual(height);
+ await page.getByRole('button',{name:'Review report'}).click();
+ await expect(page.getByText('Map pin: 42.365000, -71.105000',{exact:true})).toBeVisible();
 });

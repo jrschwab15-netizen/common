@@ -10,6 +10,9 @@ test('homepage walks through location, Boston trash photo, and optional note',as
  await expect(photo.locator('.report-example-progress .current')).toHaveText('2. Photo');
  await expect(note.locator('.report-example-progress .current')).toHaveText('3. Note');
  await expect(page.locator('#impact')).not.toContainText('Chicago');
+ const panels=await page.locator('.report-example-ui').evaluateAll(nodes=>nodes.map(node=>({width:node.getBoundingClientRect().width,height:node.getBoundingClientRect().height})));
+ expect(Math.max(...panels.map(p=>p.width))-Math.min(...panels.map(p=>p.width))).toBeLessThan(1);
+ expect(Math.max(...panels.map(p=>p.height))-Math.min(...panels.map(p=>p.height))).toBeLessThan(1);
  await note.getByRole('textbox',{name:'Example report note'}).fill('An optional example note.');
  await note.getByRole('combobox',{name:'Example issue category'}).selectOption('Sidewalk obstruction');
  await page.locator('.report-photo-grid').screenshot({path:info.outputPath('three-stage-walkthrough.png')});

@@ -132,7 +132,8 @@ export default function ApprovedHome() {
           .walkthrough-note-preview select,.walkthrough-note-preview textarea { display:block; width:100%; margin-top:6px; padding:10px; border:1px solid #c8d5e8; border-radius:6px; background:#fff; color:#172235; font:12px/1.5 Arial,sans-serif; }
           .walkthrough-note-preview textarea { height:115px; resize:vertical; }
           .walkthrough-note-preview small,.walkthrough-note-input > span { color:#657185; font-size:10px; font-weight:400; }
-          .report-walkthrough .report-example-ui { min-height:216px; }
+          .report-walkthrough .report-example-ui { min-height:300px; box-sizing:border-box; display:flex; flex-direction:column; }
+          .report-walkthrough .report-example-ui .btn { margin-top:auto; }
           .shared-place-scope { background:#edf3ff; padding:80px 0; }
           .shared-place-scope h2 { font-size:clamp(34px,4vw,56px); max-width:750px; margin:18px 0; }
           .place-scope-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; margin:32px 0; }

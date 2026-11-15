@@ -496,6 +496,10 @@ function ReportPage({ session }: { session: Session | null }) {
     draft.lat !== "" &&
     draft.lng !== "" &&
     validPoint(Number(draft.lat), Number(draft.lng));
+  const locationLabel = reportPlaceLabel(
+    draft.place_label.trim() || `Map pin: ${point[0].toFixed(6)}, ${point[1].toFixed(6)}`,
+    draft.place_type,
+  );
   async function locate() {
     E("");
     locationAsked.current = true;
@@ -534,7 +538,7 @@ function ReportPage({ session }: { session: Session | null }) {
     E("");
     try {
       if (!draft.file) throw Error("A photo is required.");
-      if (reportPlaceLabel(draft.place_label, draft.place_type).length > 200) throw Error("Shorten the location description so it fits with the selected place type.");
+      if (locationLabel.length > 200) throw Error("Shorten the location description so it fits with the selected place type.");
       if (emergencyText(draft.note)) {
         H(true);
         S(1);
@@ -549,7 +553,7 @@ function ReportPage({ session }: { session: Session | null }) {
         status: string;
       }>("intake", {
         ...draft,
-        place_label: reportPlaceLabel(draft.place_label, draft.place_type),
+        place_label: locationLabel,
         file: undefined,
         lat: Number(draft.lat),
         lng: Number(draft.lng),
@@ -828,7 +832,7 @@ function ReportPage({ session }: { session: Session | null }) {
               <p className="muted">The responsible agency may be the municipality, a parks department, a transit authority, or an airport operator. Responsibility is reviewed before publication; agency delivery is not yet enabled.</p>
               </details>
               <label>
-                Public location description
+                Public location description (optional)
                 <input
                   maxLength={200 - (draft.place_type ? draft.place_type.length + 3 : 0)}
                   value={draft.place_label}
@@ -850,8 +854,7 @@ function ReportPage({ session }: { session: Session | null }) {
                 disabled={
                   !selected ||
                   !draft.confirmed ||
-                  emergency !== false ||
-                  !draft.place_label.trim()
+                  emergency !== false
                 }
                 onClick={() => {
                   S(2);
@@ -998,7 +1001,7 @@ function ReportPage({ session }: { session: Session | null }) {
             />
           )}
           <h3>{draft.category}</h3>
-          <p>{reportPlaceLabel(draft.place_label, draft.place_type)}</p>
+          <p>{locationLabel}</p>
           <p className="muted">
             {Number(draft.lat).toFixed(6)}, {Number(draft.lng).toFixed(6)}
           </p>
