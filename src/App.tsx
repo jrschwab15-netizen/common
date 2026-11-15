@@ -1,3 +1,4 @@
+import NearbyCases from "./NearbyCases";
 import AccountEntry from "./AccountEntry";
 import ApprovedHome from "./ApprovedHome";
 import CityMap from "./CityMap";
@@ -277,15 +278,6 @@ function PlacePage() {
           information
         </p>
       )}
-      <p>Public spaces. A shared history. See what has been reported, what is still open, and what has been independently verified fixed.</p>
-      <details className="city-coverage-details"><summary>Reporting coverage &amp; data sources</summary><CoveragePanel coverage={p.coverage} />
-      <p className="muted">
-        MassGIS directory imported{" "}
-        {new Date(p.imported_at).toLocaleDateString()}. Boundary source version:{" "}
-        {new Date(p.source_version).toLocaleDateString()}. Directory coverage
-        does not verify maintenance responsibility.
-      </p>
-      </details>
       <div className="metrics">
         <div>
           <strong>{issues.length}</strong>
@@ -310,10 +302,6 @@ function PlacePage() {
           <span>Independently verified fixed</span>
         </div>
       </div>
-      <div className="notice">
-        Insufficient information to assess cleanliness. Common reports reflect
-        reported conditions, not a census of this community.
-      </div>
       <div className="section-head">
         <h2>The public record</h2>
         <Link to="/report" className="button">
@@ -334,7 +322,7 @@ function PlacePage() {
           <select value={cat} onChange={(e) => C(e.target.value)}>
             <option value="all">All categories</option>
             {categories.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c} value={c}>{c === "Other public infrastructure" ? "Other" : c}</option>
             ))}
           </select>
         </label>
@@ -364,6 +352,14 @@ function PlacePage() {
           )
           .map((i) => <IssueCard key={i.id} issue={i} />)
       )}
+      <details className="city-coverage-details"><summary>Reporting coverage &amp; data sources</summary><CoveragePanel coverage={p.coverage} />
+      <p className="muted">
+        MassGIS directory imported{" "}
+        {new Date(p.imported_at).toLocaleDateString()}. Boundary source version:{" "}
+        {new Date(p.source_version).toLocaleDateString()}. Directory coverage
+        does not verify maintenance responsibility.
+      </p>
+      </details>
       {!p.coverage?.public_reporting_enabled && (
         <button
           className="secondary"
@@ -849,7 +845,7 @@ function ReportPage({ session }: { session: Session | null }) {
                   checked={draft.confirmed}
                   onChange={(e) => update({ confirmed: e.target.checked })}
                 />
-                This pin marks the issue, not necessarily my location.
+                Move the pin on the map if needed, then confirm this location.
               </label>
 
               <button
@@ -877,6 +873,21 @@ function ReportPage({ session }: { session: Session | null }) {
             Add one photo of the public asset. Avoid faces, license plates and
             private homes. Stay on a safe public path.
           </p>
+          <label>
+            Category
+            <select
+              value={draft.category}
+              onChange={(e) => update({ category: e.target.value })}
+            >
+              {categories.map((c) => (
+                <option key={c} value={c}>{c === "Other public infrastructure" ? "Other" : c}</option>
+              ))}
+            </select>
+          </label>
+          <p className="muted">
+            Choose the closest match, or Other.
+          </p>
+          <NearbyCases lat={Number(draft.lat)} lng={Number(draft.lng)} category={draft.category} />
           <div className="upload">
             <span aria-hidden="true">＋</span>
             <label className="button">
@@ -946,21 +957,6 @@ function ReportPage({ session }: { session: Session | null }) {
             A short note helps reviewers understand the issue. Keep people’s
             names and private details out.
           </p>
-          <label>
-            Category
-            <select
-              value={draft.category}
-              onChange={(e) => update({ category: e.target.value })}
-            >
-              {categories.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <p className="muted">
-            Image category suggestions are not yet enabled. Choose the closest
-            category.
-          </p>
           {(draft.category === "Stinging insects / nests" || draft.category === "Other non-emergency safety hazard") && (
             <div className="notice" role="status">Keep a safe distance. Do not touch, disturb, or try to remove a nest, and do not approach a hazard to take a photo. Report an insect nest only when it affects safe use of a public place; its presence alone does not establish a hazard. For immediate danger or a severe allergic reaction, call 911.</div>
           )}
@@ -1011,9 +1007,7 @@ function ReportPage({ session }: { session: Session | null }) {
           <p>{draft.note || "No additional note."}</p>
           <div className="notice">
             Your submission stays private pending geographic and photo review.
-            Agency routing may be unavailable. Nearby duplicate suggestions are
-            not yet enabled; reviewers will check for duplicates before
-            publication.
+            Agency routing may be unavailable. Reviewers check for duplicates before publication.
           </div>
           <p>
             By submitting you agree to the <Link to="/terms">terms</Link> and{" "}
@@ -1540,12 +1534,13 @@ export default function App() {
         Skip to content
       </a>
       <header className="shared-header">
-        <div className="header-left"><Link className="wordmark" to="/" aria-label="Common home"><img src={import.meta.env.BASE_URL + "brand/common-mark.png"} alt=""/>common.</Link><Search compact /></div>
+        <div className="header-left"><Link className="wordmark" to="/" aria-label="Common home"><img src={import.meta.env.BASE_URL + "brand/common-mark.png"} alt=""/>common.</Link></div>
         <Link className="button small header-quick-report" to="/report"><span className="quick-report-plus" aria-hidden="true">+</span>Quick Report</Link>
         <nav aria-label="Main navigation">
           <Link to="/?section=how">How it works</Link>
           <Link to="/?section=issues">Public reports</Link>
           <Link to="/my-reports">My Reports</Link>
+          <Search compact />
           {session ? <button className="inline-button" onClick={()=>supabase.auth.signOut()}>Log out</button> : <Link to="/auth">Log in</Link>}
         </nav>
       </header>

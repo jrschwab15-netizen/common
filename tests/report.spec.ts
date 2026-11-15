@@ -67,11 +67,7 @@ test("directory search uses official live records and keyboard selection", async
   await expect(
     page.getByRole("heading", { name: "No Common reports yet" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Insufficient information to assess cleanliness.", {
-      exact: false,
-    }),
-  ).toBeVisible();
+  await expect(page.getByText("Reporting coverage & data sources", {exact:true})).toBeVisible();
 });
 
 
